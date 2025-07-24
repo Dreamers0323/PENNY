@@ -1,6 +1,7 @@
 # services/registration_service.py
-from Penny_user import User
-from interfaces.userRepoInterface import IUserRepository
+# This module provides registration services for user registration.
+from ..Penny_user import User
+from ..interfaces.userRepoInterface import IUserRepository
 
 class RegistrationService:
     def __init__(self, user_repository: IUserRepository):

@@ -1,7 +1,8 @@
-from db import init_db
+from db import init_db  # This now points to the central penny.db
 from repositories.sqllite_user_repo import SQLiteUserRepository
 from services.RegistrationService import RegistrationService
 from services.AuthenticationSer import AuthenticationService
+from session import Session  # NEW
 
 def main():
     init_db()
@@ -37,8 +38,9 @@ def main():
             password = input("Enter password: ")
 
             try:
-                message = auth_service.login(email, password)
-                print(f"✅ {message}")
+                user_id = auth_service.login(email, password)
+                Session.set("current_user_id", user_id)  # ✅ Save to session
+                print(f"✅ Login successful. User ID {user_id} is now active.")
             except ValueError as e:
                 print(f"❌ Login failed: {e}")
 

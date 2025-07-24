@@ -1,4 +1,6 @@
 # user/user_manager.py
+# this code defines functions to manage user registration and login.
+# It uses a SQLite database to store user information.
 
 from database.db import get_connection
 

@@ -1,88 +1,50 @@
 # app.py
 
-from database.db import initialize_database
-from user.user_manager import register_user, login_user
-from account.account_manager import create_account, get_account_by_user
-from loan.loan_manager import apply_loan, get_loans_by_user
-from purchases.purchase_manager import record_purchase, get_purchases_by_user
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def handle_register():
-    print("\n-- Register --")
-    name = input("Name: ")
-    email = input("Email: ")
-    password = input("Password: ")
-    user_type = input("User Type (customer/employee): ").lower()
+from user.repositories.sqllite_user_repo import SQLiteUserRepository
+from user.services.AuthenticationSer import AuthenticationService
+from user.services.RegistrationService import RegistrationService
+from user.session import Session
+from account.account_cli import launch_account_cli
+from database.init_db import init_database
+init_database()  # Ensures 'users' table exists before running app
 
-    if user_type not in ["customer", "employee"]:
-        print("❌ Invalid user type!")
+def register_user():
+    print("📝 Register New User")
+    username = input("👤 Username (Employees start with ENTK): ")
+    email = input("📧 Email: ")
+    password = input("🔑 Password: ")
+    role = input("🎭 Role (employee/customer): ").lower()
+
+    try:
+        reg_service = RegistrationService(SQLiteUserRepository("centralized.db"))
+        reg_service.register(username, email, password, role)
+        print("✅ Registration successful! You can now log in.")
+    except ValueError as e:
+        print(f"❌ Registration failed: {str(e)}")
+
+def login_user():
+    print("🔐 Login to Penny")
+    email = input("📧 Email: ")
+    password = input("🔑 Password: ")
+
+    auth_service = AuthenticationService(SQLiteUserRepository("centralized.db"))
+
+    try:
+        user_id = auth_service.login(email, password)
+        print("✅ Login successful!")
+        return user_id  # Return only ID for session use
+    except ValueError as e:
+        print(f"❌ {str(e)}")
         return None
 
-    register_user(name, email, password, user_type)
-    print("✅ Registration successful!")
-
-def handle_login():
-    print("\n-- Login --")
-    email = input("Email: ")
-    password = input("Password: ")
-
-    user = login_user(email, password)
-    if user:
-        print(f"✅ Logged in as {user[1]}")
-        return user
-    else:
-        print("❌ Login failed.")
-        return None
-
-def handle_account(user_id):
-    print("\n-- Account Menu --")
-    account = get_account_by_user(user_id)
-    if account:
-        print(f"📘 Account found: Type: {account[2]}, Balance: {account[3]}")
-    else:
-        acc_type = input("No account found. Enter account type (e.g. savings, current): ")
-        create_account(user_id, acc_type)
-        print("✅ Account created.")
-
-def handle_loan(user_id):
-    print("\n-- Loan Menu --")
-    choice = input("1. Apply for Loan\n2. View Loans\nChoose: ")
-    if choice == "1":
-        principal = float(input("Enter principal amount: "))
-        rate = float(input("Enter interest rate (e.g. 0.05): "))
-        term = int(input("Enter loan term in months: "))
-        ltype = input("Loan type (full, percentage, collateral): ")
-        apply_loan(user_id, principal, rate, term, ltype)
-        print("✅ Loan application submitted.")
-    elif choice == "2":
-        loans = get_loans_by_user(user_id)
-        if loans:
-            print("📄 Your Loans:")
-            for loan in loans:
-                print(f"- Amount: {loan[2]}, Rate: {loan[3]}, Term: {loan[4]} months, Status: {loan[6]}")
-        else:
-            print("ℹ️ No loans found.")
-
-def handle_purchase(user_id):
-    print("\n-- Purchase Menu --")
-    choice = input("1. Record Purchase\n2. View Purchases\nChoose: ")
-    if choice == "1":
-        item = input("Item name: ")
-        amount = float(input("Amount: "))
-        date = input("Date (YYYY-MM-DD): ")
-        category = input("Category (e.g. groceries, tech): ")
-        record_purchase(user_id, item, amount, date, category)
-        print("✅ Purchase recorded.")
-    elif choice == "2":
-        purchases = get_purchases_by_user(user_id)
-        if purchases:
-            print("🧾 Your Purchases:")
-            for p in purchases:
-                print(f"- {p[2]}: K{p[3]} on {p[4]} ({p[5]})")
-        else:
-            print("ℹ️ No purchases found.")
-
-def main_menu(user):
+def main_menu():
     while True:
+        current_user_id = Session.get("current_user_id")
+
         print("\n📱 Penny Main Menu")
         print("1. Account")
         print("2. Loan")
@@ -91,36 +53,36 @@ def main_menu(user):
         choice = input("Choose an option: ")
 
         if choice == "1":
-            handle_account(user[0])
+            launch_account_cli(current_user_id)
         elif choice == "2":
-            handle_loan(user[0])
+            print("🔧 Loan module coming soon...")
         elif choice == "3":
-            handle_purchase(user[0])
+            print("🔧 Purchase module coming soon...")
         elif choice == "4":
             print("👋 Logged out.")
+            Session.clear()
             break
         else:
             print("❌ Invalid option.")
 
-def main():
-    initialize_database()
-    print("🔐 Welcome to Penny")
+if __name__ == "__main__":
+    print("🚀 Welcome to Penny!")
 
     while True:
-        print("\n1. Login\n2. Register\n3. Exit")
+        print("\n1. Login")
+        print("2. Register")
+        print("3. Exit")
         option = input("Choose an option: ")
 
         if option == "1":
-            user = handle_login()
-            if user:
-                main_menu(user)
+            user_id = login_user()
+            if user_id:
+                Session.set("current_user_id", user_id)
+                main_menu()
         elif option == "2":
-            handle_register()
+            register_user()
         elif option == "3":
-            print("👋 Goodbye.")
+            print("👋 Goodbye!")
             break
         else:
             print("❌ Invalid choice.")
-
-if __name__ == "__main__":
-    main()
