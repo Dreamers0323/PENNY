@@ -9,8 +9,7 @@ from user.services.AuthenticationSer import AuthenticationService
 from user.services.RegistrationService import RegistrationService
 from user.session import Session
 from account.account_cli import launch_account_cli
-from database.init_db import init_database
-init_database()  # Ensures 'users' table exists before running app
+
 
 def register_user():
     print("📝 Register New User")

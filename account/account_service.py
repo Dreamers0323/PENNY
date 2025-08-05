@@ -2,15 +2,16 @@
 import sqlite3
 import uuid
 from datetime import datetime
-
+import os
 from .exceptions import AccountNotFoundError, InsufficientFundsError, InactiveAccountError
 from user.session import Session  # Reuse the session module
 
 class AccountService:
     def __init__(self):
-        self.conn = sqlite3.connect("central_database.db")
-        self.cursor = self.conn.cursor()
-        self._create_tables()
+      DB_PATH = os.path.join(os.path.dirname(__file__), '../database/penny.db')
+      self.conn = sqlite3.connect(DB_PATH)
+      self.cursor = self.conn.cursor() # ensure we have a cursor for executing SQL commands
+      self._create_tables()
 
     def _create_tables(self):
         self.cursor.execute('''
@@ -37,6 +38,9 @@ class AccountService:
         if account_type not in ["Savings", "Checking"]:
             raise ValueError("Invalid account type.")
 
+        # CHANGE 1: Convert user_id to string to ensure consistency
+        user_id = str(user_id)
+        
         account_id = str(uuid.uuid4())
         self.cursor.execute('''
             INSERT INTO accounts (account_id, user_id, account_type, balance, active)
@@ -46,8 +50,16 @@ class AccountService:
 
         return {"account_id": account_id, "account_type": account_type, "balance": 0.0}
 
-    def deposit(self, account_id: str, amount: float):
+    def deposit(self, user_id: str, account_id: str, amount: float):
+        # CHANGE 2: Convert user_id to string for consistent comparison
+        user_id = str(user_id)
+        
         account = self._get_active_account(account_id)
+
+
+        if account["user_id"] != user_id:
+            raise PermissionError("Unauthorized: This account doesn't belong to the logged-in user.")
+
         new_balance = account["balance"] + amount
 
         self.cursor.execute('''
@@ -58,8 +70,15 @@ class AccountService:
 
         return new_balance
 
-    def withdraw(self, account_id: str, amount: float):
+    def withdraw(self, user_id: str, account_id: str, amount: float):
+        # CHANGE 4: Convert user_id to string for consistent comparison
+        user_id = str(user_id)
+        
         account = self._get_active_account(account_id)
+
+        if account["user_id"] != user_id:
+            raise PermissionError("Unauthorized: This account doesn't belong to the logged-in user.")
+
         if account["balance"] < amount:
             raise InsufficientFundsError("Insufficient funds.")
 
@@ -73,9 +92,15 @@ class AccountService:
 
         return new_balance
 
-    def transfer_funds(self, from_id: str, to_id: str, amount: float):
+    def transfer_funds(self, user_id: str, from_id: str, to_id: str, amount: float):
+        # CHANGE 5: Convert user_id to string for consistent comparison  
+        user_id = str(user_id)
+        
         from_acc = self._get_active_account(from_id)
         to_acc = self._get_active_account(to_id)
+
+        if from_acc["user_id"] != user_id:
+            raise PermissionError("Unauthorized: You can only transfer from your own accounts.")
 
         if from_acc["balance"] < amount:
             raise InsufficientFundsError("Insufficient funds for transfer.")

@@ -34,7 +34,7 @@ def launch_account_cli(user_id=None):
             if choice == "1":
                 acc_type = input("Enter account type (Savings/Checking): ")
                 acc = service.create_account(user_id, acc_type)
-                print(f"✅ Account created! ID: {acc.account_id}")
+                print(f"✅ Account created! ID: {acc['account_id']}")
 
             elif choice == "2":
                 acc_id = input("Enter account ID: ")
@@ -57,24 +57,59 @@ def launch_account_cli(user_id=None):
 
             elif choice == "5":
                 acc_id = input("Enter account ID: ")
-                bal = service.check_funds(user_id, acc_id)
+                bal = service.check_funds(acc_id)
                 print(f"💰 Account balance: {bal}")
 
             elif choice == "6":
                 acc_id = input("Enter account ID: ")
-                txs = service.get_transaction_history(user_id, acc_id)
+                txs = service.get_transaction_history(acc_id)
                 if txs:
+                    print("\n📜 Transaction History:")
+                    print("-" * 50)
                     for tx in txs:
-                        print(f"{tx.timestamp}: {tx.transaction_type} {tx.amount}")
+                        # FIX 1: Access tuple elements by index instead of attributes
+                        transaction_type, amount, timestamp = tx
+                        print(f"📅 {timestamp}")
+                        print(f"💼 Type: {transaction_type}")
+                        print(f"💰 Amount: ${amount}")
+                        print("-" * 30)
                 else:
                     print("📭 No transactions found.")
 
             elif choice == "7":
                 acc_id = input("Enter account ID: ")
-                key = input("Enter field to update (e.g., nickname): ")
-                val = input(f"Enter new value for {key}: ")
-                acc = service.update_account(user_id, acc_id, **{key: val})
-                print(f"✅ Account updated: {vars(acc)}")
+                
+                # FIX 2: Show valid fields and validate input
+                print("\n🔧 Available fields to update:")
+                print("1. account_type (Savings/Checking)")
+                print("2. active (1 for active, 0 for inactive)")
+                
+                valid_fields = ["account_type", "active"]
+                key = input("Enter field name to update: ").strip()
+                
+                if key not in valid_fields:
+                    print(f"❌ Invalid field. Valid fields are: {', '.join(valid_fields)}")
+                    continue
+                
+                # Validate input based on field type
+                if key == "account_type":
+                    val = input("Enter new account type (Savings/Checking): ").strip()
+                    if val not in ["Savings", "Checking"]:
+                        print("❌ Invalid account type. Must be 'Savings' or 'Checking'")
+                        continue
+                elif key == "active":
+                    val = input("Enter status (1 for active, 0 for inactive): ").strip()
+                    if val not in ["0", "1"]:
+                        print("❌ Invalid status. Must be 1 or 0")
+                        continue
+                    val = int(val)
+                
+                acc = service.update_account(acc_id, **{key: val})
+                print(f"✅ Account updated successfully!")
+                print(f"   Account ID: {acc['account_id']}")
+                print(f"   Type: {acc['account_type']}")
+                print(f"   Balance: ${acc['balance']}")
+                print(f"   Active: {'Yes' if acc['active'] else 'No'}")
 
             elif choice == "8":
                 print("🔙 Returning to main menu...")
@@ -85,3 +120,5 @@ def launch_account_cli(user_id=None):
 
         except (AccountNotFoundError, InsufficientFundsError, ValueError) as e:
             print(f"⚠️ Error: {e}")
+        except Exception as e:
+            print(f"❌ Unexpected error: {e}")
