@@ -1,11 +1,13 @@
 # budget_planner.py
+# This module handles budget planning functionalities
+# It allows users to set budgets, update them, and view summaries
 
-import sqlite3
+from database.db import get_connection
 from datetime import datetime
 
 class BudgetPlanner:
-    def __init__(self, db_name="penny.db"):
-        self.conn = sqlite3.connect(db_name)
+    def __init__(self):
+        self.conn = get_connection()
         self.cursor = self.conn.cursor()
         self._create_tables()
 
@@ -39,7 +41,6 @@ class BudgetPlanner:
         year = year or datetime.now().year
         created_at = datetime.now().isoformat()
 
-        # Check if already exists
         self.cursor.execute("""
             SELECT * FROM overall_budget WHERE user_id = ? AND month = ? AND year = ?
         """, (user_id, month, year))
@@ -64,7 +65,6 @@ class BudgetPlanner:
         year = year or datetime.now().year
         created_at = datetime.now().isoformat()
 
-        # Check if this category exists
         self.cursor.execute("""
             SELECT * FROM budget WHERE user_id = ? AND category = ? AND month = ? AND year = ?
         """, (user_id, category, month, year))

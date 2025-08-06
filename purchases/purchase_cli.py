@@ -1,21 +1,19 @@
-# test_budget.py
+# purchase_cli.py
 
-from budget_planner import BudgetPlanner
+from .budget_planner import BudgetPlanner
 
-def main():
+def launch_purchase_cli(user_id):
     planner = BudgetPlanner()
 
-    user_id = input("👤 Enter your user ID: ")
-
     while True:
-        print("\n=== 📋 BUDGET MENU ===")
+        print("\n=== 📋 PURCHASE & BUDGET MENU ===")
         print("1. Set overall monthly budget")
         print("2. Add a category budget")
         print("3. View my budgets")
         print("4. Update a category budget")
         print("5. View budget summary")
         print("6. Delete a category")
-        print("7. Exit")
+        print("7. Exit to main menu")
 
         choice = input("Choose an option: ")
 
@@ -46,7 +44,7 @@ def main():
 
         elif choice == "5":
             month = input("📆 Month for summary [press Enter for current]: ") or None
-            year = input("📆 Year [press Enter for current]: ") or None
+            year = input("📆 Year for summary [press Enter for current]: ") or None
             planner.get_budget_summary(user_id, month, int(year) if year else None)
 
         elif choice == "6":
@@ -55,14 +53,10 @@ def main():
             year = input("📆 Year [press Enter for current]: ") or None
             planner.delete_budget_category(user_id, category, month, int(year) if year else None)
 
-
         elif choice == "7":
-            print("👋 Goodbye!")
+            print("👋 Returning to Main Menu...")
             break
         else:
             print("⚠️ Invalid option. Try again.")
 
     planner.close()
-
-if __name__ == "__main__":
-    main()

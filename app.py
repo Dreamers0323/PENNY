@@ -9,7 +9,7 @@ from user.services.AuthenticationSer import AuthenticationService
 from user.services.RegistrationService import RegistrationService
 from user.session import Session
 from account.account_cli import launch_account_cli
-
+from purchases.purchase_cli import launch_purchase_cli  # ✅ Import the purchase CLI
 
 def register_user():
     print("📝 Register New User")
@@ -35,7 +35,7 @@ def login_user():
     try:
         user_id = auth_service.login(email, password)
         print("✅ Login successful!")
-        return user_id  # Return only ID for session use
+        return user_id
     except ValueError as e:
         print(f"❌ {str(e)}")
         return None
@@ -56,7 +56,7 @@ def main_menu():
         elif choice == "2":
             print("🔧 Loan module coming soon...")
         elif choice == "3":
-            print("🔧 Purchase module coming soon...")
+            launch_purchase_cli(current_user_id)  # ✅ Launch the purchase CLI
         elif choice == "4":
             print("👋 Logged out.")
             Session.clear()
