@@ -10,6 +10,7 @@ from user.services.RegistrationService import RegistrationService
 from user.session import Session
 from account.account_cli import launch_account_cli
 from purchases.purchase_cli import launch_purchase_cli  # ✅ Import the purchase CLI
+from loan.loan_cli import launch_loan_cli   
 
 def register_user():
     print("📝 Register New User")
@@ -54,7 +55,6 @@ def main_menu():
         if choice == "1":
             launch_account_cli(current_user_id)
         elif choice == "2":
-            from loan.loan_cli import launch_loan_cli
             launch_loan_cli(current_user_id)
         elif choice == "3":
             launch_purchase_cli(current_user_id)  # ✅ Launch the purchase CLI

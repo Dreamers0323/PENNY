@@ -5,8 +5,11 @@ import os
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'penny.db')
 
-def get_connection():
-    return sqlite3.connect(DB_PATH)
+def get_connection(db_path=None):
+    """Get a connection to the database. Optionally specify a path."""
+    if db_path is None:
+        db_path = DB_PATH
+    return sqlite3.connect(db_path)
 
 def initialize_database():
     conn = get_connection()

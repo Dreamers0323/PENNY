@@ -3,8 +3,11 @@
 # loan, repayment, and enums for loan types and statuses.
 # define the Loan types and Repayment models, along with enums for loan types and statuses as loan data structure.
 # It includes classes for Loan and Repayment, as well as enums for LoanType and Loan
-from enum import Enum # for defining enumerations
-from datetime import date
+
+from enum import Enum
+from dataclasses import dataclass
+from typing import Optional
+from datetime import datetime
 
 class LoanType(Enum):
     FULL = "Full"
@@ -12,38 +15,31 @@ class LoanType(Enum):
     COLLATERAL = "Collateral"
 
 class LoanStatus(Enum):
-    PENDING = "Pending"
-    APPROVED = "Approved"
-    REJECTED = "Rejected"
-    REPAID = "Repaid"
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    COMPLETED = "completed"
 
+@dataclass
 class Loan:
-    def __init__(self, loan_id, user_id, principal, interest_rate, term_months, loan_type: LoanType, reason: str):
-        self.loan_id = loan_id
-        self.user_id = user_id
-        self.principal = principal
-        self.interest_rate = interest_rate
-        self.term_months = term_months
-        self.loan_type = loan_type
-        self.reason = reason
-        self.start_date = date.today()
-        self.status = LoanStatus.PENDING
-        self.repayments = []
-    
-    def calculate_total_amount(self):
-        return self.principal * (1 + self.interest_rate / 100)
+    id: Optional[int] = None
+    user_id: str = ""
+    principal: float = 0.0
+    interest_rate: float = 0.0
+    term_months: int = 0
+    loan_type: str = ""
+    reason: str = ""
+    status: str = "pending"
+    application_date: Optional[str] = None
+    approval_date: Optional[str] = None
+    monthly_payment: float = 0.0
+    total_repayment: float = 0.0
+    balance_remaining: float = 0.0
 
-    def calculate_monthly_payment(self):
-        return self.calculate_total_amount() / self.term_months
-
-    def add_repayment(self, repayment):
-        self.repayments.append(repayment)
-
-    def get_balance_remaining(self):
-        paid = sum([r.amount for r in self.repayments])
-        return self.calculate_total_amount() - paid
-
+@dataclass
 class Repayment:
-    def __init__(self, amount, payment_date=None):
-        self.amount = amount
-        self.payment_date = payment_date or date.today()
+    id: Optional[int] = None
+    loan_id: int = 0
+    amount: float = 0.0
+    payment_date: str = ""
+    created_at: Optional[str] = None
