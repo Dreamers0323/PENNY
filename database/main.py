@@ -1,5 +1,5 @@
 # main.py
-
+# this script initializes the database and sets up the environment for the application
 from database.db import initialize_database
 
 def main():

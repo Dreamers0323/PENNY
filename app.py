@@ -54,7 +54,8 @@ def main_menu():
         if choice == "1":
             launch_account_cli(current_user_id)
         elif choice == "2":
-            print("🔧 Loan module coming soon...")
+            from loan.loan_cli import launch_loan_cli
+            launch_loan_cli(current_user_id)
         elif choice == "3":
             launch_purchase_cli(current_user_id)  # ✅ Launch the purchase CLI
         elif choice == "4":
