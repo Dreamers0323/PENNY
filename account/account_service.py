@@ -1,4 +1,5 @@
 # account/account_service.py
+# this module provides account management services
 import sqlite3
 import uuid
 from datetime import datetime
@@ -139,18 +140,23 @@ class AccountService:
             VALUES (?, ?, ?, ?, ?)
         ''', (tx_id, account_id, amount, transaction_type, timestamp))
 
-    def _get_account(self, account_id: str):
-        self.cursor.execute('SELECT * FROM accounts WHERE account_id = ?', (account_id,))
-        row = self.cursor.fetchone()
-        if not row:
-            raise AccountNotFoundError("Account not found.")
-        return {
+    def get_accounts_by_user(self, user_id: str):
+        user_id = str(user_id)
+        self.cursor.execute('SELECT * FROM accounts WHERE user_id = ?', (user_id,))
+        rows = self.cursor.fetchall()
+
+        accounts = []
+        for row in rows:
+            accounts.append({
             "account_id": row[0],
             "user_id": row[1],
             "account_type": row[2],
             "balance": row[3],
             "active": bool(row[4])
-        }
+        })
+
+        return accounts
+
 
     def _get_active_account(self, account_id: str):
         acc = self._get_account(account_id)
