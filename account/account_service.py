@@ -140,29 +140,47 @@ class AccountService:
             VALUES (?, ?, ?, ?, ?)
         ''', (tx_id, account_id, amount, transaction_type, timestamp))
 
-    def get_accounts_by_user(self, user_id: str):
-        user_id = str(user_id)
-        self.cursor.execute('SELECT * FROM accounts WHERE user_id = ?', (user_id,))
-        rows = self.cursor.fetchall()
+    def _get_account(self, account_id: str):
+        """Retrieve a single account by its ID."""
+        account_id = str(account_id)
+        self.cursor.execute('SELECT * FROM accounts WHERE account_id = ?', (account_id,))
+        row = self.cursor.fetchone()
 
-        accounts = []
-        for row in rows:
-            accounts.append({
+        if not row:
+            raise AccountNotFoundError(f"Account with ID {account_id} not found.")
+
+        return {
             "account_id": row[0],
             "user_id": row[1],
             "account_type": row[2],
             "balance": row[3],
             "active": bool(row[4])
-        })
+    }
 
-        return accounts
 
 
     def _get_active_account(self, account_id: str):
-        acc = self._get_account(account_id)
-        if not acc["active"]:
-            raise InactiveAccountError("Account is inactive.")
-        return acc
+        """Retrieve a single active account by ID, raise errors if missing/inactive."""
+        account_id = str(account_id)
+        self.cursor.execute("SELECT * FROM accounts WHERE account_id = ?", (account_id,))
+        row = self.cursor.fetchone()
+
+        if not row:
+            raise AccountNotFoundError(f"Account with ID {account_id} not found.")
+
+        account = {
+            "account_id": row[0],
+            "user_id": row[1],
+            "account_type": row[2],
+            "balance": row[3],
+            "active": bool(row[4])
+        }
+
+        if not account["active"]:
+           raise InactiveAccountError("This account is inactive.")
+
+        return account
+
 
     def get_transaction_history(self, account_id: str):
         self.cursor.execute('''
@@ -170,3 +188,21 @@ class AccountService:
             WHERE account_id = ? ORDER BY timestamp DESC
         ''', (account_id,))
         return self.cursor.fetchall()
+    
+    def get_accounts_by_user(self, user_id: str):
+        """Retrieve all accounts for a given user."""
+        user_id = str(user_id)
+        self.cursor.execute("SELECT * FROM accounts WHERE user_id = ?", (user_id,))
+        rows = self.cursor.fetchall()
+
+        accounts = []
+        for row in rows:
+            accounts.append({
+                "account_id": row[0],
+                "user_id": row[1],
+                "account_type": row[2],
+                "balance": row[3],
+                "active": bool(row[4])
+            })
+
+        return accounts
