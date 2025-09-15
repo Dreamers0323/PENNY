@@ -1,5 +1,5 @@
 # database/db.py
-
+# this file sets up the SQLite database and its schema
 import sqlite3
 import os
 

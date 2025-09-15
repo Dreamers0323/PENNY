@@ -15,7 +15,7 @@ from chatbot.penny_chatbot import PennyChatbot
 
 def register_user():
     print("📝 Register New User")
-    username = input("👤 Username (Employees start with ENTK): ")
+    username = input("👤 Username: ")
     email = input("📧 Email: ")
     password = input("🔑 Password: ")
     role = input("🎭 Role (employee/customer): ").lower()

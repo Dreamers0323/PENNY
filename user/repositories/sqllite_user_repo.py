@@ -2,6 +2,7 @@
 # uses sqlite3 to implement a user repository that interacts with a SQLite database.
 # It provides methods to add a user and retrieve a user by email.
 # repositories/sqlite_user_repository.py
+# repositories/sqlite_user_repository.py
 import sqlite3
 from ..Penny_user import User
 from ..interfaces.userRepoInterface import IUserRepository
@@ -39,6 +40,11 @@ class SQLiteUserRepository(IUserRepository):
                 VALUES (?, ?, ?, ?, ?)
             """, (user.username, user.email, user.password, user.role, int(user.is_verified)))
             conn.commit()
+        except sqlite3.IntegrityError as e:
+            # This will catch duplicate email/username errors
+            raise ValueError(f"User with this email or username already exists: {str(e)}")
+        except sqlite3.Error as e:
+            raise Exception(f"Database error during user creation: {str(e)}")
         finally:
             conn.close()
 
@@ -51,5 +57,57 @@ class SQLiteUserRepository(IUserRepository):
             if row:
                 return User(*row)
             return None
+        finally:
+            conn.close()
+
+    def find_by_username(self, username: str):
+        """Find a user by their username"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+    
+        try:
+            # Fixed: Use 'password' instead of 'password_hash' to match your table schema
+            cursor.execute(
+                'SELECT id, username, email, password, role, is_verified FROM users WHERE username = ?',
+                (username,)
+            )
+            row = cursor.fetchone()
+        
+            if row:
+                # Create User object with the correct parameters (matches your table columns)
+                return User(
+                    user_id=row[0],
+                    username=row[1], 
+                    email=row[2],
+                    password=row[3],
+                    role=row[4],
+                    is_verified=bool(row[5])
+                )
+            return None
+        
+        except sqlite3.Error as e:
+            raise Exception(f"Database error: {e}")
+        finally:
+            conn.close()
+
+    # Add this method to check if username exists
+    def username_exists(self, username: str) -> bool:
+        """Check if a username already exists"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT 1 FROM users WHERE username = ?", (username,))
+            return cursor.fetchone() is not None
+        finally:
+            conn.close()
+
+    # Add this method to check if email exists  
+    def email_exists(self, email: str) -> bool:
+        """Check if an email already exists"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT 1 FROM users WHERE email = ?", (email,))
+            return cursor.fetchone() is not None
         finally:
             conn.close()

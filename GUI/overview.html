@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penny | Complete App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===============================
+           Global Styles
+        ================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #e4e4e4;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4 {
+            margin: 0 0 10px;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* ===============================
+           Sidebar
+        ================================ */
+        .sidebar {
+            width: 220px;
+            height: 100vh;
+            background: #1a1a1a;
+            padding: 20px 10px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #bb86fc;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 10px;
+            border: 2px solid #bb86fc;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            line-height: 30px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin: 15px 0;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 10px;
+            color: #e4e4e4;
+            transition: all 0.3s;
+        }
+
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background: #2e2e2e;
+            color: #bb86fc;
+        }
+
+        /* ===============================
+           Main Content
+        ================================ */
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+            width: calc(100% - 240px);
+        }
+
+        .welcome-section {
+            margin-bottom: 30px;
+        }
+
+        .welcome-section h1 {
+            color: #bb86fc;
+            font-size: 28px;
+        }
+
+        .welcome-section p {
+            color: #999;
+        }
+
+        /* ===============================
+           Cards
+        ================================ */
+        .card {
+            background: #1f1f1f;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        .card h2 {
+            color: #bb86fc;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card h2 i {
+            margin-right: 10px;
+        }
+
+        .balance-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .balance {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4caf50;
+        }
+
+        .account-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            color: #999;
+        }
+
+        /* ===============================
+           Buttons
+        ================================ */
+        .btn {
+            background: #bb86fc;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn:hover {
+            background: #9b6cd6;
+        }
+
+        .btn-secondary {
+            background: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #444;
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        /* ===============================
+           Forms
+        ================================ */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #bb86fc;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+            color: white;
+            font-size: 16px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #bb86fc;
+        }
+
+        /* ===============================
+           Transactions
+        ================================ */
+        .transaction {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .transaction:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transaction-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .transaction-type {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .transaction-amount {
+            text-align: right;
+        }
+
+        .amount {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .income {
+            color: #4caf50;
+        }
+
+        .expense {
+            color: #f44336;
+        }
+
+        .transaction-date {
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* ===============================
+           Quick Actions
+        ================================ */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* ===============================
+           Tabs
+        ================================ */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            color: #999;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: #bb86fc;
+            border-bottom: 2px solid #bb86fc;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ===============================
+           Chat Interface
+        ================================ */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 12px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #bb86fc;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.penny {
+            background: #333;
+            color: white;
+            margin-right: auto;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+            color: white;
+        }
+
+        /* ===============================
+           Loan Cards
+        ================================ */
+        .loan-card {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .loan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .loan-title {
+            font-weight: bold;
+            color: #bb86fc;
+        }
+
+        .loan-amount {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .loan-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* ===============================
+           Progress Bar
+        ================================ */
+        .progress-bar {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress {
+            height: 100%;
+            background: #bb86fc;
+            border-radius: 4px;
+        }
+
+        /* ===============================
+           Responsive Design
+        ================================ */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                padding: 15px 5px;
+            }
+            
+            .sidebar .logo {
+                margin-bottom: 20px;
+                font-size: 20px;
+                width: 40px;
+                height: 40px;
+                line-height: 20px;
+            }
+            
+            .sidebar span {
+                display: none;
+            }
+            
+            .sidebar a i {
+                margin-right: 0;
+                font-size: 20px;
+            }
+            
+            .main-content {
+                margin-left: 80px;
+                width: calc(100% - 80px);
+                padding: 20px;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animation for page load */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">P</div>
+        <ul>
+            <li><a href="#" class="nav-link active" data-page="dashboard"><i class="fas fa-home"></i> <span>Home</span></a></li>
+            <li><a href="#" class="nav-link" data-page="accounts"><i class="fas fa-credit-card"></i> <span>Accounts</span></a></li>
+            <li><a href="#" class="nav-link" data-page="loans"><i class="fas fa-university"></i> <span>Loans</span></a></li>
+            <li><a href="#" class="nav-link" data-page="plans"><i class="fas fa-chart-pie"></i> <span>Plans</span></a></li>
+            <li><a href="#" class="nav-link" data-page="penny"><i class="fas fa-robot"></i> <span>Penny</span></a></li>
+            <li><a href="#" id="logout-btn" style="margin-top: 30px;"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="page">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <h1>Welcome back, Taizya!</h1>
+                <p>Here's your financial overview for today</p>
+            </div>
+
+            <!-- Balance Card -->
+            <div class="card balance-card">
+                <h2><i class="fas fa-wallet"></i> Total Balance</h2>
+                <div class="balance">ZMW 25,632.00</div>
+                <div class="account-details">
+                    <span>Primary Account: 1234 5678 9012 3456</span>
+                    <span>Updated: Today, 10:45 AM</span>
+                </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="card">
+                <h2><i class="fas fa-history"></i> Recent Transactions</h2>
+                <div class="transaction">
+                    <div class="transaction-details">
+                        <div class="transaction-name">SATO.SA</div>
+                        <div class="transaction-type">Services • System</div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="amount income">+32,000</div>
+                        <div class="transaction-date">ZMW 35,625.00</div>
+                    </div>
+                </div>
+                <div class="transaction">
+                    <div class="transaction-details">
+                        <div class="transaction-name">DOR.SA</div>
+                        <div class="transaction-type">Investment Returns • System</div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="amount income">+15,000</div>
+                        <div class="transaction-date">ZMW 22,423.00</div>
+                    </div>
+                </div>
+                <div class="transaction">
+                    <div class="transaction-details">
+                        <div class="transaction-name">GIR.SA</div>
+                        <div class="transaction-type">Licensing Price • System</div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="amount income">+12,000</div>
+                        <div class="transaction-date">ZMW 17,421.00</div>
+                    </div>
+                </div>
+                <div class="transaction">
+                    <div class="transaction-details">
+                        <div class="transaction-name">SIG.SA</div>
+                        <div class="transaction-type">Solders • System</div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="amount expense">-12,000</div>
+                        <div class="transaction-date">ZMW 19,452.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+                <div class="quick-actions">
+                    <button class="btn"><i class="fas fa-arrow-up"></i> Send Money</button>
+                    <button class="btn"><i class="fas fa-arrow-down"></i> Request Money</button>
+                    <button class="btn"><i class="fas fa-piggy-bank"></i> Add to Savings</button>
+                    <button class="btn"><i class="fas fa-file-invoice"></i> Pay Bills</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts Page -->
+        <div id="accounts" class="page hidden">
+            <div class="welcome-section">
+                <h1><i class="fas fa-credit-card"></i> Accounts</h1>
+                <p>Manage your accounts and transactions</p>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="accounts">My Accounts</div>
+                <div class="tab" data-tab="transfer">Transfer Funds</div>
+                <div class="tab" data-tab="history">Transaction History</div>
+            </div>
+
+            <div class="tab-content active" id="accounts-tab">
+                <div class="card">
+                    <h2><i class="fas fa-wallet"></i> Account Summary</h2>
+                    <div class="account-details">
+                        <div>
+                            <h3>Primary Account</h3>
+                            <p>1234 5678 9012 3456</p>
+                            <div class="balance">ZMW 25,632.00</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm"><i class="fas fa-eye"></i> View Details</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2><i class="fas fa-piggy-bank"></i> Savings Account</h2>
+                    <div class="account-details">
+                        <div>
+                            <h3>Savings Account</h3>
+                            <p>9876 5432 1098 7654</p>
+                            <div class="balance">ZMW 12,450.00</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm"><i class="fas fa-eye"></i> View Details</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn"><i class="fas fa-plus"></i> Open New Account</button>
+                    <button class="btn"><i class="fas fa-exchange-alt"></i> Account Services</button>
+                    <button class="btn"><i class="fas fa-download"></i> Statements</button>
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="transfer-tab">
+                <div class="card">
+                    <h2><i class="fas fa-exchange-alt"></i> Transfer Funds</h2>
+                    <div class="form-group">
+                        <label for="from-account">From Account</label>
+                        <select class="form-control" id="from-account">
+                            <option>Primary Account (1234 5678 9012 3456) - ZMW 25,632.00</option>
+                            <option>Savings Account (9876 5432 1098 7654) - ZMW 12,450.00</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="to-account">To Account</label>
+                        <select class="form-control" id="to-account">
+                            <option>Select account</option>
+                            <option>Another Penny account</option>
+                            <option>Other bank account</option>
+                            <option>Mobile money</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Amount (ZMW)</label>
+                        <input type="number" class="form-control" id="amount" placeholder="Enter amount">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <input type="text" class="form-control" id="description" placeholder="Enter description">
+                    </div>
+                    <button class="btn"><i class="fas fa-paper-plane"></i> Transfer Now</button>
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="history-tab">
+                <div class="card">
+                    <h2><i class="fas fa-history"></i> Transaction History</h2>
+                    <div class="form-group">
+                        <label for="account-select">Select Account</label>
+                        <select class="form-control" id="account-select">
+                            <option>All Accounts</option>
+                            <option>Primary Account</option>
+                            <option>Savings Account</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date-range">Date Range</label>
+                        <select class="form-control" id="date-range">
+                            <option>Last 7 days</option>
+                            <option>Last 30 days</option>
+                            <option>Last 3 months</option>
+                            <option>Custom range</option>
+                        </select>
+                    </div>
+                    <button class="btn"><i class="fas fa-filter"></i> Apply Filters</button>
+                    
+                    <div class="transaction">
+                        <div class="transaction-details">
+                            <div class="transaction-name">Salary Deposit</div>
+                            <div class="transaction-type">Income • Employer</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <div class="amount income">+8,500</div>
+                            <div class="transaction-date">Oct 5, 2023</div>
+                        </div>
+                    </div>
+                    <div class="transaction">
+                        <div class="transaction-details">
+                            <div class="transaction-name">Electricity Bill</div>
+                            <div class="transaction-type">Utility • ZESCO</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <div class="amount expense">-750</div>
+                            <div class="transaction-date">Oct 3, 2023</div>
+                        </div>
+                    </div>
+                    <div class="transaction">
+                        <div class="transaction-details">
+                            <div class="transaction-name">Grocery Shopping</div>
+                            <div class="transaction-type">Shopping • Pick n Pay</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <div class="amount expense">-1,240</div>
+                            <div class="transaction-date">Oct 1, 2023</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loans Page -->
+        <div id="loans" class="page hidden">
+            <div class="welcome-section">
+                <h1><i class="fas fa-university"></i> Loans</h1>
+                <p>Apply for and manage your loans</p>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="my-loans">My Loans</div>
+                <div class="tab" data-tab="apply">Apply for Loan</div>
+                <div class="tab" data-tab="calculator">Loan Calculator</div>
+            </div>
+
+            <div class="tab-content active" id="my-loans-tab">
+                <div class="card">
+                    <h2><i class="fas fa-clipboard-list"></i> Active Loans</h2>
+                    
+                    <div class="loan-card">
+                        <div class="loan-header">
+                            <div class="loan-title">Personal Loan</div>
+                            <div class="loan-amount">ZMW 15,000</div>
+                        </div>
+                        <div class="loan-details">
+                            <div>Interest Rate: 12%</div>
+                            <div>Term: 24 months</div>
+                            <div>Monthly Payment: ZMW 705</div>
+                            <div>Next Payment: Oct 15, 2023</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 35%;"></div>
+                        </div>
+                        <div style="text-align: center; color: #999; font-size: 14px;">35% paid</div>
+                    </div>
+
+                    <div class="loan-card">
+                        <div class="loan-header">
+                            <div class="loan-title">Education Loan</div>
+                            <div class="loan-amount">ZMW 25,000</div>
+                        </div>
+                        <div class="loan-details">
+                            <div>Interest Rate: 8%</div>
+                            <div>Term: 36 months</div>
+                            <div>Monthly Payment: ZMW 785</div>
+                            <div>Next Payment: Oct 20, 2023</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 15%;"></div>
+                        </div>
+                        <div style="text-align: center; color: #999; font-size: 14px;">15% paid</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2><i class="fas fa-history"></i> Loan Payment History</h2>
+                    <div class="transaction">
+                        <div class="transaction-details">
+                            <div class="transaction-name">Personal Loan Payment</div>
+                            <div class="transaction-type">Loan • Automatic deduction</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <div class="amount expense">-705</div>
+                            <div class="transaction-date">Sep 15, 2023</div>
+                        </div>
+                    </div>
+                    <div class="transaction">
+                        <div class="transaction-details">
+                            <div class="transaction-name">Education Loan Payment</div>
+                            <div class="transaction-type">Loan • Manual payment</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <div class="amount expense">-785</div>
+                            <div class="transaction-date">Sep 20, 2023</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="apply-tab">
+                <div class="card">
+                    <h2><i class="fas fa-file-alt"></i> Apply for a Loan</h2>
+                    <div class="form-group">
+                        <label for="loan-type">Loan Type</label>
+                        <select class="form-control" id="loan-type">
+                            <option>Select loan type</option>
+                            <option>Personal Loan</option>
+                            <option>Education Loan</option>
+                            <option>Home Loan</option>
+                            <option>Business Loan</option>
+                            <option>Emergency Loan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="loan-amount">Loan Amount (ZMW)</label>
+                        <input type="number" class="form-control" id="loan-amount" placeholder="Enter amount">
+                    </div>
+                    <div class="form-group">
+                        <label for="loan-term">Loan Term (months)</label>
+                        <select class="form-control" id="loan-term">
+                            <option>6 months</option>
+                            <option>12 months</option>
+                            <option>24 months</option>
+                            <option>36 months</option>
+                            <option>48 months</option>
+                            <option>60 months</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="purpose">Loan Purpose</label>
+                        <textarea class="form-control" id="purpose" rows="3" placeholder="Describe the purpose of this loan"></textarea>
+                    </div>
+                    <button class="btn"><i class="fas fa-paper-plane"></i> Submit Application</button>
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="calculator-tab">
+                <div class="card">
+                    <h2><i class="fas fa-calculator"></i> Loan Calculator</h2>
+                    <div class="form-group">
+                        <label for="calc-amount">Loan Amount (ZMW)</label>
+                        <input type="number" class="form-control" id="calc-amount" placeholder="Enter amount" value="10000">
+                    </div>
+                    <div class="form-group">
+                        <label for="calc-term">Loan Term (months)</label>
+                        <select class="form-control" id="calc-term">
+                            <option>6 months</option>
+                            <option>12 months</option>
+                            <option selected>24 months</option>
+                            <option>36 months</option>
+                            <option>48 months</option>
+                            <option>60 months</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="calc-interest">Interest Rate (%)</label>
+                        <input type="number" class="form-control" id="calc-interest" placeholder="Enter interest rate" value="12">
+                    </div>
+                    <button class="btn" id="calculate-btn"><i class="fas fa-calculator"></i> Calculate</button>
+                    
+                    <div id="calculation-result" style="margin-top: 20px; padding: 15px; background: #2a2a2a; border-radius: 8px;">
+                        <h3>Calculation Results</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <div>Monthly Payment:</div>
+                            <div style="font-weight: bold;">ZMW 470.73</div>
+                            <div>Total Payment:</div>
+                            <div style="font-weight: bold;">ZMW 11,297.65</div>
+                            <div>Total Interest:</div>
+                            <div style="font-weight: bold;">ZMW 1,297.65</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plans Page -->
+        <div id="plans" class="page hidden">
+            <div class="welcome-section">
+                <h1><i class="fas fa-chart-pie"></i> Plans</h1>
+                <p>Budget planning and saving goals</p>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="budget">Budget</div>
+                <div class="tab" data-tab="savings">Savings Goals</div>
+                <div class="tab" data-tab="expenses">Expense Tracking</div>
+            </div>
+
+            <div class="tab-content active" id="budget-tab">
+                <div class="card">
+                    <h2><i class="fas fa-wallet"></i> Monthly Budget</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h3>Income</h3>
+                            <div class="balance income">ZMW 8,500</div>
+                            <div style="margin-top: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>Salary</span>
+                                    <span>ZMW 8,000</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Other Income</span>
+                                    <span>ZMW 500</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3>Expenses</h3>
+                            <div class="balance expense">ZMW 6,200</div>
+                            <div style="margin-top: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>Housing</span>
+                                    <span>ZMW 2,500</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>Food</span>
+                                    <span>ZMW 1,500</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>Transport</span>
+                                    <span>ZMW 800</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Other</span>
+                                    <span>ZMW 1,400</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #333;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h3>Remaining</h3>
+                            <div class="balance income">ZMW 2,300</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2><i class="fas fa-chart-pie"></i> Expense Breakdown</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                        <div>
+                            <div style="height: 200px; background: #2a2a2a; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: #999;">
+                                Pie Chart Visualization
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                <div style="width: 15px; height: 15px; background: #bb86fc; border-radius: 50%; margin-right: 10px;"></div>
+                                <div style="flex: 1;">Housing (40%)</div>
+                                <div>ZMW 2,500</div>
+                            </div>
+                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                <div style="width: 15px; height: 15px; background: #4caf50; border-radius: 50%; margin-right: 10px;"></div>
+                                <div style="flex: 1;">Food (24%)</div>
+                                <div>ZMW 1,500</div>
+                            </div>
+                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                <div style="width: 15px; height: 15px; background: #f44336; border-radius: 50%; margin-right: 10px;"></div>
+                                <div style="flex: 1;">Transport (13%)</div>
+                                <div>ZMW 800</div>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 15px; height: 15px; background: #ff9800; border-radius: 50%; margin-right: 10px;"></div>
+                                <div style="flex: 1;">Other (23%)</div>
+                                <div>ZMW 1,400</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="savings-tab">
+                <div class="card">
+                    <h2><i class="fas fa-bullseye"></i> Savings Goals</h2>
+                    
+                    <div class="loan-card">
+                        <div class="loan-header">
+                            <div class="loan-title">New Laptop</div>
+                            <div class="loan-amount">ZMW 12,000</div>
+                        </div>
+                        <div class="loan-details">
+                            <div>Target Date: Dec 2023</div>
+                            <div>Monthly Saving: ZMW 2,000</div>
+                            <div>Saved: ZMW 8,000</div>
+                            <div>Remaining: ZMW 4,000</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 66%;"></div>
+                        </div>
+                        <div style="text-align: center; color: #999; font-size: 14px;">66% saved</div>
+                    </div>
+
+                    <div class="loan-card">
+                        <div class="loan-header">
+                            <div class="loan-title">Vacation</div>
+                            <div class="loan-amount">ZMW 8,000</div>
+                        </div>
+                        <div class="loan-details">
+                            <div>Target Date: Mar 2024</div>
+                            <div>Monthly Saving: ZMW 1,000</div>
+                            <div>Saved: ZMW 2,500</div>
+                            <div>Remaining: ZMW 5,500</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 31%;"></div>
+                        </div>
+                        <div style="text-align: center; color: #999; font-size: 14px;">31% saved</div>
+                    </div>
+
+                    <button class="btn" style="margin-top: 20px;"><i class="fas fa-plus"></i> Create New Goal</button>
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="expenses-tab">
+                <div class="card">
+                    <h2><i class="fas fa-receipt"></i> Expense Tracking</h2>
+                    <div class="form-group">
+                        <label for="expense-category">Category</label>
+                        <select class="form-control" id="expense-category">
+                            <option>Food & Dining</option>
+                            <option>Transportation</option>
+                            <option>Utilities</option>
+                            <option>Entertainment</option>
+                            <option>Shopping</option>
+                            <option>Healthcare</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-amount">Amount (ZMW)</label>
+                        <input type="number" class="form-control" id="expense-amount" placeholder="Enter amount">
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-date">Date</label>
+                        <input type="date" class="form-control" id="expense-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-description">Description</label>
+                        <input type="text" class="form-control" id="expense-description" placeholder="Enter description">
+                    </div>
+                    <button class="btn"><i class="fas fa-plus"></i> Add Expense</button>
+                    
+                    <h3 style="margin-top: 30px;">Recent Expenses</h3>
+                    <div class="transaction">
+                        <div class="transaction-details">
+                            <div class="transaction-name">Grocery Shopping</div>
+                            <div class="transaction-type">Food & Dining • Pick n Pay</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <div class="amount expense">-420</div>
+                            <div class="transaction-date">Oct 10, 2023</div>
+                        </div>
+                    </div>
+                    <div class="transaction">
+                        <div class="transaction-details">
+                            <div class="transaction-name">Fuel</div>
+                            <div class="transaction-type">Transportation • Puma Station</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <div class="amount expense">-350</div>
+                            <div class="transaction-date">Oct 8, 2023</div>
+                        </div>
+                    </div>
+                    <div class="transaction">
+                        <div class="transaction-details">
+                            <div class="transaction-name">Internet Bill</div>
+                            <div class="transaction-type">Utilities • Zamtel</div>
+                        </div>
+                        <div class="transaction-amount">
+                            <div class="amount expense">-499</div>
+                            <div class="transaction-date">Oct 5, 2023</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Penny Page -->
+        <div id="penny" class="page hidden">
+            <div class="welcome-section">
+                <h1><i class="fas fa-robot"></i> Penny Assistant</h1>
+                <p>Your AI financial assistant is here to help</p>
+            </div>
+
+            <div class="card">
+                <div class="chat-container">
+                    <div class="chat-messages">
+                        <div class="message penny">
+                            <strong>Penny:</strong> Hello Taizya! I'm your financial assistant. How can I help you today?
+                        </div>
+                        <div class="message user">
+                            <strong>You:</strong> What's my current balance?
+                        </div>
+                        <div class="message penny">
+                            <strong>Penny:</strong> Your current balance across all accounts is ZMW 38,082.00. Your primary account has ZMW 25,632.00 and your savings account has ZMW 12,450.00.
+                        </div>
+                        <div class="message user">
+                            <strong>You:</strong> Can you show me my recent transactions?
+                        </div>
+                        <div class="message penny">
+                            <strong>Penny:</strong> You've had 4 transactions in the last week. The largest was a deposit of ZMW 32,000 from SATO.SA. Would you like me to show more details?
+                        </div>
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" placeholder="Type your message here...">
+                        <button class="btn"><i class="fas fa-paper-plane"></i> Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class="fas fa-lightbulb"></i> Financial Tips</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="padding: 15px; background: #2a2a2a; border-radius: 8px;">
+                        <h3><i class="fas fa-piggy-bank"></i> Saving Strategy</h3>
+                        <p>Based on your income, you could save up to ZMW 2,500 monthly by reducing dining out and entertainment expenses.</p>
+                    </div>
+                    <div style="padding: 15px; background: #2a2a2a; border-radius: 8px;">
+                        <h3><i class="fas fa-chart-line"></i> Investment Opportunity</h3>
+                        <p>Consider investing ZMW 5,000 in government bonds with 14% annual returns.</p>
+                    </div>
+                    <div style="padding: 15px; background: #2a2a2a; border-radius: 8px;">
+                        <h3><i class="fas fa-credit-card"></i> Debt Management</h3>
+                        <p>You're doing well with your loan repayments. Keep it up to improve your credit score.</p>
+                    </div>
+                    <div style="padding: 15px; background: #2a2a2a; border-radius: 8px;">
+                        <h3><i class="fas fa-shield-alt"></i> Security Alert</h3>
+                        <p>Remember to never share your banking details with anyone. Penny will never ask for your password.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <button class="btn"><i class="fas fa-question-circle"></i> Ask About Accounts</button>
+                <button class="btn"><i class="fas fa-calculator"></i> Loan Questions</button>
+                <button class="btn"><i class="fas fa-chart-pie"></i> Budget Help</button>
+                <button class="btn"><i class="fas fa-exchange-alt"></i> Transaction History</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Navigation between pages
+            const navLinks = document.querySelectorAll('.nav-link');
+            const pages = document.querySelectorAll('.page');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetPage = this.getAttribute('data-page');
+                    
+                    // Update active navigation link
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show target page, hide others
+                    pages.forEach(page => {
+                        if (page.id === targetPage) {
+                            page.classList.remove('hidden');
+                        } else {
+                            page.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabContainer = this.closest('.tabs');
+                    const tabContents = tabContainer.nextElementSibling.parentElement.querySelectorAll('.tab-content');
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show target tab content, hide others
+                    tabContents.forEach(content => {
+                        if (content.id === `${targetTab}-tab`) {
+                            content.classList.remove('hidden');
+                            content.classList.add('active');
+                        } else {
+                            content.classList.add('hidden');
+                            content.classList.remove('active');
+                        }
+                    });
+                });
+            });
+            
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    alert('Logging out... Redirecting to login page.');
+                    // In a real app, this would redirect to the login page
+                }
+            });
+            
+            // Chat functionality
+            const chatForm = document.querySelector('.chat-input');
+            const chatInput = chatForm.querySelector('input');
+            const chatMessages = document.querySelector('.chat-messages');
+            
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const message = chatInput.value.trim();
+                
+                if (message) {
+                    // Add user message
+                    addMessage(message, 'user');
+                    chatInput.value = '';
+                    
+                    // Simulate Penny response
+                    setTimeout(() => {
+                        let response = "I'm not sure how to help with that. Can you try asking about your accounts, loans, or budget?";
+                        
+                        if (message.toLowerCase().includes('balance')) {
+                            response = "Your current balance is ZMW 38,082.00 across all accounts.";
+                        } else if (message.toLowerCase().includes('transaction')) {
+                            response = "You've had 12 transactions this month. The largest was a deposit of ZMW 32,000.";
+                        } else if (message.toLowerCase().includes('loan')) {
+                            response = "You have two active loans: Personal Loan (ZMW 15,000) and Education Loan (ZMW 25,000).";
+                        } else if (message.toLowerCase().includes('budget')) {
+                            response = "Your monthly budget is ZMW 8,500 income and ZMW 6,200 expenses, leaving ZMW 2,300 for savings.";
+                        }
+                        
+                        addMessage(response, 'penny');
+                    }, 1000);
+                }
+            });
+            
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', sender);
+                messageDiv.innerHTML = `<strong>${sender === 'penny' ? 'Penny:' : 'You:'}</strong> ${text}`;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Loan calculator
+            const calculateBtn = document.getElementById('calculate-btn');
+            if (calculateBtn) {
+                calculateBtn.addEventListener('click', function() {
+                    alert('Loan calculation functionality would be implemented here.');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

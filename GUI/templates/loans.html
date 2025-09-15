@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Loans{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1><i class="fas fa-university"></i> Loans</h1>
+    <p>Apply for and manage your loans</p>
+</div>
+
+<div class="tabs">
+    <div class="tab active" data-tab="my-loans">My Loans</div>
+    <div class="tab" data-tab="apply">Apply for Loan</div>
+    <div class="tab" data-tab="calculator">Loan Calculator</div>
+</div>
+
+<div class="tab-content active" id="my-loans-tab">
+    <!-- My Loans content here -->
+</div>
+
+<div class="tab-content hidden" id="apply-tab">
+    <!-- Apply content here -->
+</div>
+
+<div class="tab-content hidden" id="calculator-tab">
+    <!-- Calculator content here -->
+</div>
+{% endblock %}

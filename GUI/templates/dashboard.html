@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-section">
+    <h1>Welcome back, {{ current_user.username }}!</h1>
+    <p>Here's your financial overview for today</p>
+</div>
+
+<!-- Balance Card -->
+<div class="card balance-card">
+    <h2><i class="fas fa-wallet"></i> Total Balance</h2>
+    <div class="balance">ZMW 25,632.00</div>
+    <div class="account-details">
+        <span>Primary Account: 1234 5678 9012 3456</span>
+        <span>Updated: Today, 10:45 AM</span>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="card">
+    <h2><i class="fas fa-history"></i> Recent Transactions</h2>
+    <div class="transaction">
+        <div class="transaction-details">
+            <div class="transaction-name">SATO.SA</div>
+            <div class="transaction-type">Services • System</div>
+        </div>
+        <div class="transaction-amount">
+            <div class="amount income">+32,000</div>
+            <div class="transaction-date">ZMW 35,625.00</div>
+        </div>
+    </div>
+    <div class="transaction">
+        <div class="transaction-details">
+            <div class="transaction-name">DOR.SA</div>
+            <div class="transaction-type">Investment Returns • System</div>
+        </div>
+        <div class="transaction-amount">
+            <div class="amount income">+15,000</div>
+            <div class="transaction-date">ZMW 22,423.00</div>
+        </div>
+    </div>
+    <div class="transaction">
+        <div class="transaction-details">
+            <div class="transaction-name">GIR.SA</div>
+            <div class="transaction-type">Licensing Price • System</div>
+        </div>
+        <div class="transaction-amount">
+            <div class="amount income">+12,000</div>
+            <div class="transaction-date">ZMW 17,421.00</div>
+        </div>
+    </div>
+    <div class="transaction">
+        <div class="transaction-details">
+            <div class="transaction-name">SIG.SA</div>
+            <div class="transaction-type">Solders • System</div>
+        </div>
+        <div class="transaction-amount">
+            <div class="amount expense">-12,000</div>
+            <div class="transaction-date">ZMW 19,452.00</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+    <div class="quick-actions">
+        <button class="btn"><i class="fas fa-arrow-up"></i> Send Money</button>
+        <button class="btn"><i class="fas fa-arrow-down"></i> Request Money</button>
+        <button class="btn"><i class="fas fa-piggy-bank"></i> Add to Savings</button>
+        <button class="btn"><i class="fas fa-file-invoice"></i> Pay Bills</button>
+    </div>
+</div>
+{% endblock %}

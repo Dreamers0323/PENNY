@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penny | {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">P</div>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"><i class="fas fa-home"></i> <span>Home</span></a></li>
+            <li><a href="{{ url_for('accounts') }}" class="nav-link {% if request.endpoint == 'accounts' %}active{% endif %}"><i class="fas fa-credit-card"></i> <span>Accounts</span></a></li>
+            <li><a href="{{ url_for('loans') }}" class="nav-link {% if request.endpoint == 'loans' %}active{% endif %}"><i class="fas fa-university"></i> <span>Loans</span></a></li>
+            <li><a href="{{ url_for('plans') }}" class="nav-link {% if request.endpoint == 'plans' %}active{% endif %}"><i class="fas fa-chart-pie"></i> <span>Plans</span></a></li>
+            <li><a href="{{ url_for('penny') }}" class="nav-link {% if request.endpoint == 'penny' %}active{% endif %}"><i class="fas fa-robot"></i> <span>Penny</span></a></li>
+            <li><a href="{{ url_for('logout') }}" id="logout-btn" style="margin-top: 30px;"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

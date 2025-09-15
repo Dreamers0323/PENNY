@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penny - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+    <!-- Background animation -->
+    <div class="background-animation" id="backgroundAnimation"></div>
+    
+    <!-- Login container -->
+    <div class="login-container">
+        <div class="penny-logo">
+            <i class="fas fa-coins"></i>
+        </div>
+        <h1>Welcome to Penny</h1>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="error-message" style="display: block;">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+            <input type="email" id="email" name="email" placeholder="Enter email" required autocomplete="email">
+            <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
+            <button type="submit">Login</button>
+        </form>
+        <p>Not registered? <a href="{{ url_for('signup') }}">Sign up</a></p>
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

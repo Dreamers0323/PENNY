@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Penny Assistant{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1><i class="fas fa-robot"></i> Penny Assistant</h1>
+    <p>Your AI financial assistant is here to help</p>
+</div>
+
+<div class="card">
+    <div class="chat-container">
+        <div class="chat-messages">
+            <div class="message penny">
+                <strong>Penny:</strong> Hello {{ current_user.username }}! I'm your financial assistant. How can I help you today?
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" placeholder="Type your message here...">
+            <button class="btn"><i class="fas fa-paper-plane"></i> Send</button>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-lightbulb"></i> Financial Tips</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div style="padding: 15px; background: #2a2a2a; border-radius: 8px;">
+            <h3><i class="fas fa-piggy-bank"></i> Saving Strategy</h3>
+            <p>Based on your income, you could save up to ZMW 2,500 monthly by reducing dining out and entertainment expenses.</p>
+        </div>
+        <div style="padding: 15px; background: #2a2a2a; border-radius: 8px;">
+            <h3><i class="fas fa-chart-line"></i> Investment Opportunity</h3>
+            <p>Consider investing ZMW 5,000 in government bonds with 14% annual returns.</p>
+        </div>
+        <div style="padding: 15px; background: #2a2a2a; border-radius: 8px;">
+            <h3><i class="fas fa-credit-card"></i> Debt Management</h3>
+            <p>You're doing well with your loan repayments. Keep it up to improve your credit score.</p>
+        </div>
+        <div style="padding: 15px; background: #2a2a2a; border-radius: 8px;">
+            <h3><i class="fas fa-shield-alt"></i> Security Alert</h3>
+            <p>Remember to never share your banking details with anyone. Penny will never ask for your password.</p>
+        </div>
+    </div>
+</div>
+
+<div class="quick-actions">
+    <button class="btn"><i class="fas fa-question-circle"></i> Ask About Accounts</button>
+    <button class="btn"><i class="fas fa-calculator"></i> Loan Questions</button>
+    <button class="btn"><i class="fas fa-chart-pie"></i> Budget Help</button>
+    <button class="btn"><i class="fas fa-exchange-alt"></i> Transaction History</button>
+</div>
+{% endblock %}

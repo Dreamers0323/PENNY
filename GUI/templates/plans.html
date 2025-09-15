@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Plans{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1><i class="fas fa-chart-pie"></i> Plans</h1>
+    <p>Budget planning and saving goals</p>
+</div>
+
+<div class="tabs">
+    <div class="tab active" data-tab="budget">Budget</div>
+    <div class="tab" data-tab="savings">Savings Goals</div>
+    <div class="tab" data-tab="expenses">Expense Tracking</div>
+</div>
+
+<div class="tab-content active" id="budget-tab">
+    <!-- Budget content here -->
+</div>
+
+<div class="tab-content hidden" id="savings-tab">
+    <!-- Savings content here -->
+</div>
+
+<div class="tab-content hidden" id="expenses-tab">
+    <!-- Expenses content here -->
+</div>
+{% endblock %}

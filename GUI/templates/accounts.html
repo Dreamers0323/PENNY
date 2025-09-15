@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1><i class="fas fa-credit-card"></i> Accounts</h1>
+    <p>Manage your accounts and transactions</p>
+</div>
+
+<div class="tabs">
+    <div class="tab active" data-tab="accounts">My Accounts</div>
+    <div class="tab" data-tab="transfer">Transfer Funds</div>
+    <div class="tab" data-tab="history">Transaction History</div>
+</div>
+
+<div class="tab-content active" id="accounts-tab">
+    <!-- Accounts content here -->
+</div>
+
+<div class="tab-content hidden" id="transfer-tab">
+    <!-- Transfer content here -->
+</div>
+
+<div class="tab-content hidden" id="history-tab">
+    <!-- History content here -->
+</div>
+{% endblock %}
