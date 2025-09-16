@@ -27,12 +27,19 @@
         {% endwith %}
         
         <form method="POST" action="{{ url_for('login') }}" id="loginForm">
-            <input type="email" id="email" name="email" placeholder="Enter email" required autocomplete="email">
+            <input type="text" id="username" name="username" placeholder="Enter username" required autocomplete="username">
             <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
             <button type="submit">Login</button>
         </form>
         <p>Not registered? <a href="{{ url_for('signup') }}">Sign up</a></p>
         <div class="error-message" id="errorMessage"></div>
+        
+        <!-- Debug info (remove in production) -->
+        <div style="margin-top: 20px; padding: 10px; background: #2a2a2a; border-radius: 5px; font-size: 12px; color: #999;">
+            <strong>Debug Info:</strong><br>
+            Method: {{ request.method }}<br>
+            Form data: {{ request.form|tojson }}
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

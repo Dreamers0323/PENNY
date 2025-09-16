@@ -12,66 +12,39 @@
 <!-- Balance Card -->
 <div class="card balance-card">
     <h2><i class="fas fa-wallet"></i> Total Balance</h2>
-    <div class="balance">ZMW 25,632.00</div>
+    <div class="balance">ZMW {{ "%.2f"|format(total_balance) if total_balance is defined else "0.00" }}</div>
     <div class="account-details">
-        <span>Primary Account: 1234 5678 9012 3456</span>
-        <span>Updated: Today, 10:45 AM</span>
+        <span>Across all your accounts</span>
+        <span>Updated: Just now</span>
     </div>
 </div>
 
-<!-- Recent Transactions -->
+<!-- Account Summary -->
 <div class="card">
-    <h2><i class="fas fa-history"></i> Recent Transactions</h2>
-    <div class="transaction">
-        <div class="transaction-details">
-            <div class="transaction-name">SATO.SA</div>
-            <div class="transaction-type">Services • System</div>
+    <h2><i class="fas fa-credit-card"></i> Your Accounts</h2>
+    {% if accounts %}
+        {% for account in accounts %}
+        <div class="account-summary" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #333;">
+            <div>
+                <div style="font-weight: bold;">{{ account.account_type }} Account</div>
+                <div style="color: #999; font-size: 14px;">ID: {{ account.account_id[:8] }}...</div>
+            </div>
+            <div class="balance">ZMW {{ "%.2f"|format(account.balance) }}</div>
         </div>
-        <div class="transaction-amount">
-            <div class="amount income">+32,000</div>
-            <div class="transaction-date">ZMW 35,625.00</div>
-        </div>
-    </div>
-    <div class="transaction">
-        <div class="transaction-details">
-            <div class="transaction-name">DOR.SA</div>
-            <div class="transaction-type">Investment Returns • System</div>
-        </div>
-        <div class="transaction-amount">
-            <div class="amount income">+15,000</div>
-            <div class="transaction-date">ZMW 22,423.00</div>
-        </div>
-    </div>
-    <div class="transaction">
-        <div class="transaction-details">
-            <div class="transaction-name">GIR.SA</div>
-            <div class="transaction-type">Licensing Price • System</div>
-        </div>
-        <div class="transaction-amount">
-            <div class="amount income">+12,000</div>
-            <div class="transaction-date">ZMW 17,421.00</div>
-        </div>
-    </div>
-    <div class="transaction">
-        <div class="transaction-details">
-            <div class="transaction-name">SIG.SA</div>
-            <div class="transaction-type">Solders • System</div>
-        </div>
-        <div class="transaction-amount">
-            <div class="amount expense">-12,000</div>
-            <div class="transaction-date">ZMW 19,452.00</div>
-        </div>
-    </div>
+        {% endfor %}
+    {% else %}
+        <p>You don't have any accounts yet. <a href="{{ url_for('accounts') }}" style="color: #bb86fc;">Create your first account</a> to get started!</p>
+    {% endif %}
 </div>
 
 <!-- Quick Actions -->
 <div class="card">
     <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
     <div class="quick-actions">
-        <button class="btn"><i class="fas fa-arrow-up"></i> Send Money</button>
-        <button class="btn"><i class="fas fa-arrow-down"></i> Request Money</button>
-        <button class="btn"><i class="fas fa-piggy-bank"></i> Add to Savings</button>
-        <button class="btn"><i class="fas fa-file-invoice"></i> Pay Bills</button>
+        <a href="{{ url_for('accounts') }}" class="btn"><i class="fas fa-arrow-up"></i> Send Money</a>
+        <a href="{{ url_for('accounts') }}#transfer-tab" class="btn"><i class="fas fa-exchange-alt"></i> Transfer Funds</a>
+        <a href="{{ url_for('accounts') }}" class="btn"><i class="fas fa-piggy-bank"></i> Add to Savings</a>
+        <a href="{{ url_for('accounts') }}" class="btn"><i class="fas fa-file-invoice"></i> Pay Bills</a>
     </div>
 </div>
 {% endblock %}

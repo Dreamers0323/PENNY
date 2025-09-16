@@ -1,8 +1,6 @@
 # repositories/sqlite_user_repository.py
 # uses sqlite3 to implement a user repository that interacts with a SQLite database.
 # It provides methods to add a user and retrieve a user by email.
-# repositories/sqlite_user_repository.py
-# repositories/sqlite_user_repository.py
 import sqlite3
 from ..Penny_user import User
 from ..interfaces.userRepoInterface import IUserRepository
@@ -66,23 +64,25 @@ class SQLiteUserRepository(IUserRepository):
         cursor = conn.cursor()
     
         try:
-            # Fixed: Use 'password' instead of 'password_hash' to match your table schema
             cursor.execute(
                 'SELECT id, username, email, password, role, is_verified FROM users WHERE username = ?',
                 (username,)
             )
             row = cursor.fetchone()
+            print(f"Database row for username '{username}': {row}")  # Debug log
         
             if row:
-                # Create User object with the correct parameters (matches your table columns)
-                return User(
-                    user_id=row[0],
+                # Create User object matching your dataclass constructor exactly
+                user = User(
+                    id=row[0],           # Changed from user_id to id
                     username=row[1], 
                     email=row[2],
                     password=row[3],
                     role=row[4],
                     is_verified=bool(row[5])
                 )
+                print(f"Created user object: {user}")  # Debug log
+                return user
             return None
         
         except sqlite3.Error as e:

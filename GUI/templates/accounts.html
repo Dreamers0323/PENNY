@@ -8,21 +8,183 @@
     <p>Manage your accounts and transactions</p>
 </div>
 
+<!-- Total Balance Card -->
+<div class="card balance-card">
+    <h2><i class="fas fa-wallet"></i> Total Balance</h2>
+    <div class="balance">ZMW {{ "%.2f"|format(total_balance) }}</div>
+    <div class="account-details">
+        <span>Across all your accounts</span>
+        <span>Updated: Just now</span>
+    </div>
+</div>
+
 <div class="tabs">
     <div class="tab active" data-tab="accounts">My Accounts</div>
     <div class="tab" data-tab="transfer">Transfer Funds</div>
     <div class="tab" data-tab="history">Transaction History</div>
 </div>
 
+<!-- My Accounts Tab -->
 <div class="tab-content active" id="accounts-tab">
-    <!-- Accounts content here -->
+    <!-- Create Account Card -->
+    <div class="card">
+        <h2><i class="fas fa-plus-circle"></i> Create New Account</h2>
+        <form method="POST" action="{{ url_for('create_account') }}">
+            <div class="form-group">
+                <label for="account_type">Account Type</label>
+                <select class="form-control" id="account_type" name="account_type" required>
+                    <option value="">Select account type</option>
+                    <option value="Savings">Savings Account</option>
+                    <option value="Checking">Checking Account</option>
+                </select>
+            </div>
+            <button type="submit" class="btn"><i class="fas fa-plus"></i> Create Account</button>
+        </form>
+    </div>
+
+    <!-- User Accounts -->
+    {% if accounts %}
+        {% for account in accounts %}
+        <div class="card">
+            <div class="account-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2><i class="fas fa-{{ 'piggy-bank' if account.account_type == 'Savings' else 'wallet' }}"></i> {{ account.account_type }} Account</h2>
+                <span class="account-id" style="color: #999; font-size: 14px;">ID: {{ account.account_id[:8] }}...</span>
+            </div>
+            
+            <div class="balance" style="font-size: 24px; margin-bottom: 20px;">ZMW {{ "%.2f"|format(account.balance) }}</div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <!-- Deposit Form -->
+                <form method="POST" action="{{ url_for('deposit') }}">
+                    <input type="hidden" name="account_id" value="{{ account.account_id }}">
+                    <div class="form-group">
+                        <label for="deposit_amount_{{ account.account_id }}">Deposit Amount (ZMW)</label>
+                        <input type="number" class="form-control" id="deposit_amount_{{ account.account_id }}" name="amount" step="0.01" min="0.01" required>
+                    </div>
+                    <button type="submit" class="btn"><i class="fas fa-arrow-down"></i> Deposit</button>
+                </form>
+                
+                <!-- Withdraw Form -->
+                <form method="POST" action="{{ url_for('withdraw') }}">
+                    <input type="hidden" name="account_id" value="{{ account.account_id }}">
+                    <div class="form-group">
+                        <label for="withdraw_amount_{{ account.account_id }}">Withdraw Amount (ZMW)</label>
+                        <input type="number" class="form-control" id="withdraw_amount_{{ account.account_id }}" name="amount" step="0.01" min="0.01" required>
+                    </div>
+                    <button type="submit" class="btn"><i class="fas fa-arrow-up"></i> Withdraw</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <h2><i class="fas fa-info-circle"></i> No Accounts Yet</h2>
+            <p>You don't have any accounts yet. Create your first account above to get started!</p>
+        </div>
+    {% endif %}
 </div>
 
+<!-- Transfer Funds Tab -->
 <div class="tab-content hidden" id="transfer-tab">
-    <!-- Transfer content here -->
+    <div class="card">
+        <h2><i class="fas fa-exchange-alt"></i> Transfer Funds</h2>
+        
+        {% if accounts|length < 2 %}
+            <div class="alert" style="background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <i class="fas fa-info-circle"></i> You need at least 2 accounts to transfer funds.
+            </div>
+        {% else %}
+            <form method="POST" action="{{ url_for('transfer') }}">
+                <div class="form-group">
+                    <label for="from_account_id">From Account</label>
+                    <select class="form-control" id="from_account_id" name="from_account_id" required>
+                        <option value="">Select source account</option>
+                        {% for account in accounts %}
+                            <option value="{{ account.account_id }}">{{ account.account_type }} - ZMW {{ "%.2f"|format(account.balance) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="to_account_id">To Account</label>
+                    <select class="form-control" id="to_account_id" name="to_account_id" required>
+                        <option value="">Select destination account</option>
+                        {% for account in accounts %}
+                            <option value="{{ account.account_id }}">{{ account.account_type }} - ZMW {{ "%.2f"|format(account.balance) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transfer_amount">Amount (ZMW)</label>
+                    <input type="number" class="form-control" id="transfer_amount" name="amount" step="0.01" min="0.01" required>
+                </div>
+                
+                <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Transfer Funds</button>
+            </form>
+        {% endif %}
+    </div>
 </div>
 
+<!-- Transaction History Tab -->
 <div class="tab-content hidden" id="history-tab">
-    <!-- History content here -->
+    <div class="card">
+        <h2><i class="fas fa-history"></i> Transaction History</h2>
+        
+        {% if recent_transactions %}
+            <div class="form-group">
+                <label for="account_select">Select Account</label>
+                <select class="form-control" id="account_select">
+                    <option value="all">All Accounts</option>
+                    {% for account in accounts %}
+                        <option value="{{ account.account_id }}">{{ account.account_type }} Account</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div id="transaction-list">
+                {% for transaction in recent_transactions %}
+                <div class="transaction" data-account="{{ transaction.account_id }}">
+                    <div class="transaction-details">
+                        <div class="transaction-name">{{ transaction.transaction_type|title }}</div>
+                        <div class="transaction-type">{{ transaction.account_type }} Account • {{ transaction.timestamp }}</div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="amount {% if transaction.transaction_type in ['deposit', 'transfer_in'] %}income{% else %}expense{% endif %}">
+                            {% if transaction.transaction_type in ['deposit', 'transfer_in'] %}+{% else %}-{% endif %}ZMW {{ "%.2f"|format(transaction.amount) }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No transactions yet. Make your first deposit to see transaction history.</p>
+        {% endif %}
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// JavaScript for account filtering
+document.addEventListener('DOMContentLoaded', function() {
+    const accountSelect = document.getElementById('account_select');
+    const transactionList = document.getElementById('transaction-list');
+    
+    if (accountSelect && transactionList) {
+        accountSelect.addEventListener('change', function() {
+            const selectedAccount = this.value;
+            const transactions = transactionList.querySelectorAll('.transaction');
+            
+            transactions.forEach(transaction => {
+                if (selectedAccount === 'all' || transaction.getAttribute('data-account') === selectedAccount) {
+                    transaction.style.display = 'flex';
+                } else {
+                    transaction.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+</script>
 {% endblock %}

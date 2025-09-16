@@ -1,6 +1,26 @@
+# database/db_helper.py
+# This module provides helper functions for database operations using SQLite.
 import sqlite3
 import os
 from . import db  # Import your existing db module
+from threading import local
+
+# Thread-local storage for database connections
+thread_local = local()
+
+def get_db_connection():
+    """Get a database connection for the current thread"""
+    if not hasattr(thread_local, 'db_connection'):
+        db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database', 'penny.db')
+        thread_local.db_connection = sqlite3.connect(db_path)
+        thread_local.db_connection.row_factory = sqlite3.Row
+    return thread_local.db_connection
+
+def close_db_connection(e=None):
+    """Close the database connection for the current thread"""
+    if hasattr(thread_local, 'db_connection'):
+        thread_local.db_connection.close()
+        del thread_local.db_connection
 
 def get_user_by_username(username):
     """Get user by username from the database"""

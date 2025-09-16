@@ -1,4 +1,4 @@
-# utils/session.py (you may create a 'utils' folder if not existing)
+# user/session.py (you may create a 'utils' folder if not existing)
 # This module provides a simple session management system to store the current user's ID.
 # It allows setting and getting the current user ID, which can be used for tracking user sessions
 
