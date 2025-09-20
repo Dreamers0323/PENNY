@@ -379,6 +379,7 @@ a {
 .loan-title {
     font-weight: bold;
     color: #bb86fc;
+    font-size: 18px;
 }
 
 .loan-amount {
@@ -392,6 +393,28 @@ a {
     gap: 10px;
     color: #999;
     font-size: 14px;
+    margin-bottom: 10px;
+}
+
+/* Status colors */
+.status-approved {
+    color: #4caf50;
+}
+
+.status-pending {
+    color: #ff9800;
+}
+
+.status-rejected {
+    color: #f44336;
+}
+
+/* Calculator styles */
+#calculationResult {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 /* ===============================

@@ -8,21 +8,416 @@
     <p>Apply for and manage your loans</p>
 </div>
 
+<!-- Loan Summary -->
+<div class="card">
+    <h2><i class="fas fa-chart-bar"></i> Loan Summary</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+        <div style="text-align: center; padding: 15px; background: #2a2a2a; border-radius: 8px;">
+            <h3>Total Borrowed</h3>
+            <div class="balance">ZMW {{ "%.2f"|format(total_borrowed) }}</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #2a2a2a; border-radius: 8px;">
+            <h3>Total Owed</h3>
+            <div class="balance expense">ZMW {{ "%.2f"|format(total_owed) }}</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #2a2a2a; border-radius: 8px;">
+            <h3>Total Repaid</h3>
+            <div class="balance income">ZMW {{ "%.2f"|format(total_repaid) }}</div>
+        </div>
+    </div>
+</div>
+
 <div class="tabs">
     <div class="tab active" data-tab="my-loans">My Loans</div>
     <div class="tab" data-tab="apply">Apply for Loan</div>
     <div class="tab" data-tab="calculator">Loan Calculator</div>
 </div>
 
-<div class="tab-content active" id="my-loans-tab">
-    <!-- My Loans content here -->
+<!-- My Loans Tab -->
+<!-- In the My Loans tab section -->
+{% for loan in loans %}
+<div class="loan-card">
+    <div class="loan-header">
+        <div>
+            <div class="loan-title">{{ loan.loan_type }} Loan</div>
+            <div style="color: #999; font-size: 14px;">
+                Applied: {{ loan.application_date }} • 
+                Status: 
+                <span style="color: 
+                    {% if loan.status == 'approved' %}#4caf50
+                    {% elif loan.status == 'rejected' %}#f44336
+                    {% else %}#ff9800{% endif %}">
+                    {{ loan.status|title }}
+                </span>
+            </div>
+        </div>
+        <div class="loan-amount">ZMW {{ "%.2f"|format(loan.principal) }}</div>
+    </div>
+    
+    <div class="loan-details">
+        <div>Interest Rate: {{ loan.interest_rate }}%</div>
+        <div>Term: {{ loan.term_months }} months</div>
+        <div>Monthly Payment: ZMW {{ "%.2f"|format(loan.monthly_payment) }}</div>
+        <div>Balance: ZMW {{ "%.2f"|format(loan.balance_remaining) }}</div>
+        <div>Total Repaid: ZMW {{ "%.2f"|format(loan.total_repayment) }}</div>
+    </div>
+    
+    {% if loan.reason %}
+    <div style="margin: 10px 0; padding: 10px; background: #2a2a2a; border-radius: 5px;">
+        <strong>Reason:</strong> {{ loan.reason }}
+    </div>
+    {% endif %}
+    
+    <!-- In the repayment form section, update to include proper IDs -->
+    {% if loan.status == 'approved' and loan.balance_remaining > 0 %}
+    <div style="margin-top: 15px; padding: 15px; background: #2a2a2a; border-radius: 8px;">
+        <h4 style="margin-bottom: 10px; color: #bb86fc;"><i class="fas fa-money-bill-wave"></i> Make a Payment</h4>
+        <form method="POST" action="{{ url_for('make_repayment') }}">
+            <input type="hidden" name="loan_id" value="{{ loan.id }}">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; align-items: end;">
+                <div>
+                    <label for="amount-{{ loan.id }}" style="display: block; margin-bottom: 5px; color: #bb86fc;">
+                        Amount (ZMW)
+                    </label>
+                    <input type="number" class="form-control" id="amount-{{ loan.id }}" name="amount" 
+                        step="0.01" min="0.01" max="{{ loan.balance_remaining }}" 
+                        placeholder="Enter amount" required>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm" id="max-btn-{{ loan.id }}" 
+                            style="display: none; background: #4caf50; margin-bottom: 5px;"
+                            onclick="document.getElementById('amount-{{ loan.id }}').value = '{{ loan.balance_remaining }}'; this.style.display = 'none'">
+                        <i class="fas fa-arrow-up"></i> Max
+                    </button>
+                    <button type="submit" class="btn btn-sm" style="background: #bb86fc;">
+                        <i class="fas fa-check"></i> Pay
+                    </button>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #999; margin-top: 5px;">
+                Maximum: ZMW {{ "%.2f"|format(loan.balance_remaining) }}
+            </div>
+        </form>
+    </div>
+    {% endif %}
+    
+    {% if loan.status == 'approved' %}
+    <div class="progress-bar" style="margin-top: 15px;">
+        <div class="progress" style="width: {{ ((loan.principal - loan.balance_remaining) / loan.principal * 100) if loan.principal > 0 else 0 }}%;"></div>
+    </div>
+    <div style="text-align: center; color: #999; font-size: 14px; margin-top: 5px;">
+        {{ "%.1f"|format(((loan.principal - loan.balance_remaining) / loan.principal * 100) if loan.principal > 0 else 0) }}% repaid
+    </div>
+    {% endif %}
 </div>
+{% endfor %}
 
+<!-- Apply for Loan Tab -->
 <div class="tab-content hidden" id="apply-tab">
-    <!-- Apply content here -->
+    <div class="card">
+        <h2><i class="fas fa-file-alt"></i> Apply for a Loan</h2>
+        <form method="POST" action="{{ url_for('apply_for_loan') }}">
+            <div class="form-group">
+                <label for="loan_type">Loan Type</label>
+                <select class="form-control" id="loan_type" name="loan_type" required>
+                    <option value="">Select loan type</option>
+                    <option value="Personal">Personal Loan</option>
+                    <option value="Education">Education Loan</option>
+                    <option value="Home">Home Loan</option>
+                    <option value="Business">Business Loan</option>
+                    <option value="Emergency">Emergency Loan</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="principal">Loan Amount (ZMW)</label>
+                <input type="number" class="form-control" id="principal" name="principal" step="0.01" min="100" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="interest_rate">Interest Rate (%)</label>
+                <input type="number" class="form-control" id="interest_rate" name="interest_rate" step="0.01" min="1" max="50" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="term_months">Loan Term (months)</label>
+                <select class="form-control" id="term_months" name="term_months" required>
+                    <option value="">Select term</option>
+                    <option value="6">6 months</option>
+                    <option value="12">12 months</option>
+                    <option value="24">24 months</option>
+                    <option value="36">36 months</option>
+                    <option value="48">48 months</option>
+                    <option value="60">60 months</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="reason">Reason for Loan (Optional)</label>
+                <textarea class="form-control" id="reason" name="reason" rows="3" placeholder="Briefly describe what you need the loan for"></textarea>
+            </div>
+            
+            <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Submit Application</button>
+        </form>
+    </div>
 </div>
 
+<!-- Loan Calculator Tab -->
 <div class="tab-content hidden" id="calculator-tab">
-    <!-- Calculator content here -->
+    <div class="card">
+        <h2><i class="fas fa-calculator"></i> Loan Calculator</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <form id="calculatorForm">
+                    <div class="form-group">
+                        <label for="calc_principal">Loan Amount (ZMW)</label>
+                        <input type="number" class="form-control" id="calc_principal" step="100" min="100" value="10000" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="calc_interest_rate">Interest Rate (%)</label>
+                        <input type="number" class="form-control" id="calc_interest_rate" step="0.1" min="1" max="50" value="12" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="calc_term_months">Loan Term (months)</label>
+                        <select class="form-control" id="calc_term_months" required>
+                            <option value="6">6 months</option>
+                            <option value="12">12 months</option>
+                            <option value="24" selected>24 months</option>
+                            <option value="36">36 months</option>
+                            <option value="48">48 months</option>
+                            <option value="60">60 months</option>
+                        </select>
+                    </div>
+                    
+                    <button type="button" class="btn" id="calculateBtn"><i class="fas fa-calculator"></i> Calculate</button>
+                </form>
+            </div>
+            
+            <div>
+                <div id="calculationResult" style="padding: 20px; background: #2a2a2a; border-radius: 8px;">
+                    <h3>Calculation Results</h3>
+                    <div style="margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span>Monthly Payment:</span>
+                            <span style="font-weight: bold;" id="monthlyPayment">ZMW 0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span>Total Payment:</span>
+                            <span style="font-weight: bold;" id="totalPayment">ZMW 0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Total Interest:</span>
+                            <span style="font-weight: bold;" id="totalInterest">ZMW 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Loan calculator functionality
+    const calculateBtn = document.getElementById('calculateBtn');
+    
+    // Function to calculate loan
+    async function calculateLoan() {
+        const principal = parseFloat(document.getElementById('calc_principal').value);
+        const interestRate = parseFloat(document.getElementById('calc_interest_rate').value);
+        const termMonths = parseInt(document.getElementById('calc_term_months').value);
+        
+        // Validate inputs
+        if (isNaN(principal) || isNaN(interestRate) || isNaN(termMonths) || 
+            principal <= 0 || interestRate <= 0 || termMonths <= 0) {
+            // Don't show alert, just set default values
+            document.getElementById('monthlyPayment').textContent = 'ZMW 0.00';
+            document.getElementById('totalPayment').textContent = 'ZMW 0.00';
+            document.getElementById('totalInterest').textContent = 'ZMW 0.00';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/loans/calculator', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    calc_principal: principal,
+                    calc_interest_rate: interestRate,
+                    calc_term_months: termMonths
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error('Calculation error:', data.error);
+                document.getElementById('monthlyPayment').textContent = 'ZMW 0.00';
+                document.getElementById('totalPayment').textContent = 'ZMW 0.00';
+                document.getElementById('totalInterest').textContent = 'ZMW 0.00';
+            } else {
+                document.getElementById('monthlyPayment').textContent = 'ZMW ' + data.monthly_payment.toFixed(2);
+                document.getElementById('totalPayment').textContent = 'ZMW ' + data.total_payment.toFixed(2);
+                document.getElementById('totalInterest').textContent = 'ZMW ' + data.total_interest.toFixed(2);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('monthlyPayment').textContent = 'ZMW 0.00';
+            document.getElementById('totalPayment').textContent = 'ZMW 0.00';
+            document.getElementById('totalInterest').textContent = 'ZMW 0.00';
+        }
+    }
+    
+    // Set up event listeners
+    if (calculateBtn) {
+        // Calculate when button is clicked
+        calculateBtn.addEventListener('click', calculateLoan);
+        
+        // Calculate when any input changes
+        document.getElementById('calc_principal').addEventListener('input', calculateLoan);
+        document.getElementById('calc_interest_rate').addEventListener('input', calculateLoan);
+        document.getElementById('calc_term_months').addEventListener('change', calculateLoan);
+        
+        // Calculate on page load (with a small delay to ensure inputs are rendered)
+        setTimeout(calculateLoan, 100);
+    }
+    
+    // Tab functionality
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+            
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show target tab content, hide others
+            document.querySelectorAll('.tab-content').forEach(content => {
+                if (content.id === `${targetTab}-tab`) {
+                    content.classList.remove('hidden');
+                    content.classList.add('active');
+                } else {
+                    content.classList.add('hidden');
+                    content.classList.remove('active');
+                }
+            });
+            
+            // Recalculate loan if calculator tab is opened
+            if (targetTab === 'calculator') {
+                setTimeout(calculateLoan, 100);
+            }
+        });
+    });
+
+    // ===== REPAYMENT FUNCTIONALITY =====
+    // Repayment form validation and handling
+    document.querySelectorAll('form[action$="/repay"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const amountInput = this.querySelector('input[name="amount"]');
+            const amount = parseFloat(amountInput.value);
+            const maxAmount = parseFloat(amountInput.getAttribute('max'));
+            
+            if (isNaN(amount) || amount <= 0) {
+                e.preventDefault();
+                alert('Please enter a valid repayment amount.');
+                return;
+            }
+            
+            if (amount > maxAmount) {
+                e.preventDefault();
+                alert(`Repayment amount cannot exceed ZMW ${maxAmount.toFixed(2)}`);
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after 3 seconds in case of error
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+    });
+    
+    // Auto-format repayment amounts and show/hide max button
+    document.querySelectorAll('input[name="amount"]').forEach(input => {
+        const maxBtn = input.parentElement.nextElementSibling.querySelector('#max-btn');
+        
+        input.addEventListener('input', function() {
+            if (this.value) {
+                // Show max button when user starts typing
+                if (maxBtn) {
+                    maxBtn.style.display = 'inline-block';
+                }
+            }
+        });
+        
+        input.addEventListener('blur', function() {
+            if (this.value) {
+                this.value = parseFloat(this.value).toFixed(2);
+            }
+        });
+    });
+    
+    // Max button functionality
+    document.querySelectorAll('button[id^="max-btn-"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const loanId = this.id.split('-')[2];
+            const amountInput = document.getElementById(`amount-${loanId}`);
+            const maxAmount = parseFloat(amountInput.getAttribute('max'));
+            
+            amountInput.value = maxAmount.toFixed(2);
+            this.style.display = 'none';
+        });
+    });
+
+    // ===== QUICK PAYMENT BUTTONS =====
+    // Add quick payment buttons (25%, 50%, 75%, 100% of balance)
+    document.querySelectorAll('.loan-card').forEach(loanCard => {
+        const amountInput = loanCard.querySelector('input[name="amount"]');
+        if (amountInput) {
+            const maxAmount = parseFloat(amountInput.getAttribute('max'));
+            const quickPayDiv = document.createElement('div');
+            quickPayDiv.style.marginTop = '10px';
+            quickPayDiv.innerHTML = `
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <button type="button" class="btn btn-sm quick-pay-btn" data-percent="25" style="background: #4caf50; font-size: 12px; padding: 4px 8px;">25%</button>
+                    <button type="button" class="btn btn-sm quick-pay-btn" data-percent="50" style="background: #2196f3; font-size: 12px; padding: 4px 8px;">50%</button>
+                    <button type="button" class="btn btn-sm quick-pay-btn" data-percent="75" style="background: #ff9800; font-size: 12px; padding: 4px 8px;">75%</button>
+                    <button type="button" class="btn btn-sm quick-pay-btn" data-percent="100" style="background: #f44336; font-size: 12px; padding: 4px 8px;">100%</button>
+                </div>
+            `;
+            
+            amountInput.parentElement.parentElement.appendChild(quickPayDiv);
+            
+            // Add event listeners to quick pay buttons
+            quickPayDiv.querySelectorAll('.quick-pay-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const percent = parseInt(this.getAttribute('data-percent'));
+                    const amount = (maxAmount * percent / 100).toFixed(2);
+                    amountInput.value = amount;
+                    
+                    // Hide max button since user has selected an amount
+                    const maxBtn = document.getElementById(`max-btn-${loanCard.id.split('-')[1]}`);
+                    if (maxBtn) {
+                        maxBtn.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -1,28 +1,674 @@
 {% extends "base.html" %}
 
-{% block title %}Plans{% endblock %}
+{% block title %}Financial Plans{% endblock %}
 
 {% block content %}
 <div class="welcome-section">
-    <h1><i class="fas fa-chart-pie"></i> Plans</h1>
+    <h1><i class="fas fa-chart-pie"></i> Financial Plans</h1>
     <p>Budget planning and saving goals</p>
 </div>
 
+<!-- Navigation Tabs -->
 <div class="tabs">
     <div class="tab active" data-tab="budget">Budget</div>
     <div class="tab" data-tab="savings">Savings Goals</div>
     <div class="tab" data-tab="expenses">Expense Tracking</div>
 </div>
 
+<!-- Budget Management Tab -->
 <div class="tab-content active" id="budget-tab">
-    <!-- Budget content here -->
+    <!-- Budget Forms Section -->
+    <div class="forms-grid">
+        <!-- Overall Budget Form -->
+        <div class="card">
+            <h2><i class="fas fa-wallet"></i> Set Overall Budget</h2>
+            <form method="POST" action="{{ url_for('set_budget') }}">
+                <input type="hidden" name="budget_type" value="overall">
+                
+                <div class="form-group">
+                    <label for="overall_amount">Monthly Budget Amount (ZMW)</label>
+                    <input type="number" class="form-control" id="overall_amount" name="amount" step="0.01" min="0.01" required>
+                </div>
+                
+                <div class="date-grid">
+                    <div class="form-group">
+                        <label for="budget_month">Month</label>
+                        <select class="form-control" id="budget_month" name="month">
+                            {% for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] %}
+                            <option value="{{ month }}">{{ month }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="budget_year">Year</label>
+                        <select class="form-control" id="budget_year" name="year">
+                            {% for year in range(2023, 2030) %}
+                            <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Set Overall Budget
+                </button>
+            </form>
+        </div>
+
+        <!-- Category Budget Form -->
+        <div class="card">
+            <h2><i class="fas fa-list"></i> Set Category Budget</h2>
+            <form method="POST" action="{{ url_for('set_budget') }}">
+                <input type="hidden" name="budget_type" value="category">
+                
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select class="form-control" id="category" name="category" required>
+                        <option value="">Select category</option>
+                        {% for category in ['Housing', 'Food', 'Transportation', 'Utilities', 'Entertainment', 'Healthcare', 'Shopping', 'Education', 'Other'] %}
+                        <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="category_amount">Budget Amount (ZMW)</label>
+                    <input type="number" class="form-control" id="category_amount" name="amount" step="0.01" min="0.01" required>
+                </div>
+                
+                <div class="date-grid">
+                    <div class="form-group">
+                        <label for="cat_month">Month</label>
+                        <select class="form-control" id="cat_month" name="month">
+                            {% for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] %}
+                            <option value="{{ month }}">{{ month }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cat_year">Year</label>
+                        <select class="form-control" id="cat_year" name="year">
+                            {% for year in range(2023, 2030) %}
+                            <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Set Category Budget
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Budget Summary Section -->
+    <div class="card summary-card">
+        <h2><i class="fas fa-chart-pie"></i> Budget Summary</h2>
+        {% if budget_summary %}
+        <div class="summary-grid">
+            <div class="summary-item income">
+                <h3>Income</h3>
+                <div class="amount">ZMW {{ "%.2f"|format(budget_summary.total_budget) if budget_summary.total_budget else "0.00" }}</div>
+            </div>
+            <div class="summary-item expense">
+                <h3>Expenses</h3>
+                <div class="amount">ZMW {{ "%.2f"|format(budget_summary.total_spent) if budget_summary.total_spent else "0.00" }}</div>
+            </div>
+            <div class="summary-item remaining">
+                <h3>Remaining</h3>
+                <div class="amount">ZMW {{ "%.2f"|format(budget_summary.remaining) if budget_summary.remaining else "0.00" }}</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No budget data available. Set your budgets above to see the summary.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Current Budgets Section -->
+    <div class="card">
+        <h2><i class="fas fa-list-alt"></i> Current Budgets</h2>
+        {% if budgets %}
+        <div class="budgets-list">
+            {% for budget in budgets %}
+            <div class="budget-item {% if budget.category == 'Overall' or budget.category == 'overall' %}overall-budget{% endif %}">
+                <div class="budget-info">
+                    <div class="budget-name">
+                        {% if budget.category == 'Overall' or budget.category == 'overall' %}
+                        <i class="fas fa-wallet"></i> Overall Budget
+                        {% else %}
+                        <i class="fas fa-tag"></i> {{ budget.category }}
+                        {% endif %}
+                    </div>
+                    <div class="budget-date">{{ budget.month }} {{ budget.year }}</div>
+                </div>
+                <div class="budget-actions">
+                    <div class="budget-amount">ZMW {{ "%.2f"|format(budget.amount) }}</div>
+                    <form method="POST" action="{{ url_for('delete_budget') }}" class="delete-form">
+                        <input type="hidden" name="category" value="{{ budget.category }}">
+                        <input type="hidden" name="month" value="{{ budget.month }}">
+                        <input type="hidden" name="year" value="{{ budget.year }}">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this budget?')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No budgets set yet. Create budgets above to manage your expenses.</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
+<!-- Savings Goals Tab -->
 <div class="tab-content hidden" id="savings-tab">
-    <!-- Savings content here -->
+    <!-- Savings Forms Section -->
+    <div class="forms-grid">
+        <!-- Add Savings Goal -->
+        <div class="card">
+            <h2><i class="fas fa-bullseye"></i> Add Savings Goal</h2>
+            <form method="POST" action="{{ url_for('add_savings_goal') }}">
+                <div class="form-group">
+                    <label for="goal_name">Goal Name</label>
+                    <input type="text" class="form-control" id="goal_name" name="goal_name" 
+                           placeholder="e.g., New Laptop, Vacation" required>
+                </div>
+                <div class="form-group">
+                    <label for="target_amount">Target Amount (ZMW)</label>
+                    <input type="number" class="form-control" id="target_amount" name="target_amount" 
+                           step="0.01" min="0.01" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Goal
+                </button>
+            </form>
+        </div>
+
+        <!-- Update Savings Progress -->
+        <div class="card">
+            <h2><i class="fas fa-piggy-bank"></i> Update Savings Progress</h2>
+            <form method="POST" action="{{ url_for('update_savings') }}">
+                <div class="form-group">
+                    <label for="savings_goal">Select Goal</label>
+                    <select class="form-control" id="savings_goal" name="goal_name" required>
+                        <option value="">Select goal</option>
+                        {% for goal in savings_goals %}
+                        <option value="{{ goal.goal_name }}">{{ goal.goal_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="savings_amount">Amount to Add (ZMW)</label>
+                    <input type="number" class="form-control" id="savings_amount" name="amount" 
+                           step="0.01" min="0.01" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Add to Savings
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Savings Goals List -->
+    <div class="card">
+        <h2><i class="fas fa-target"></i> Your Savings Goals</h2>
+        {% if savings_goals %}
+        <div class="goals-grid">
+            {% for goal in savings_goals %}
+            {% set progress_percentage = (goal.saved_amount / goal.target_amount * 100) if goal.target_amount > 0 else 0 %}
+            <div class="goal-card">
+                <div class="goal-header">
+                    <div class="goal-title">{{ goal.goal_name }}</div>
+                    <div class="goal-target">ZMW {{ "%.2f"|format(goal.target_amount) }}</div>
+                </div>
+                
+                <div class="goal-details">
+                    <div class="detail-item">
+                        <span>Saved:</span>
+                        <span>ZMW {{ "%.2f"|format(goal.saved_amount) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Remaining:</span>
+                        <span>ZMW {{ "%.2f"|format(goal.target_amount - goal.saved_amount) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Progress:</span>
+                        <span>{{ "%.1f"|format(progress_percentage) }}%</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {{ progress_percentage }}%;"></div>
+                </div>
+                
+                <div class="goal-footer">
+                    <span class="progress-text">{{ "%.1f"|format(progress_percentage) }}% achieved</span>
+                    <form method="POST" action="{{ url_for('delete_savings_goal') }}" class="delete-form">
+                        <input type="hidden" name="goal_name" value="{{ goal.goal_name }}">
+                        <button type="submit" class="btn btn-danger btn-sm" 
+                                onclick="return confirm('Are you sure you want to delete this savings goal?')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No savings goals yet. Create your first savings goal above!</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
+<!-- Expense Tracking Tab -->
 <div class="tab-content hidden" id="expenses-tab">
-    <!-- Expenses content here -->
+    <div class="card">
+        <h2><i class="fas fa-receipt"></i> Expense Tracking</h2>
+        <p class="section-description">Track your daily expenses to stay within your budget.</p>
+        
+        <form class="expense-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="expense-category">Category</label>
+                    <select class="form-control" id="expense-category">
+                        {% for category in ['Housing', 'Food', 'Transportation', 'Utilities', 'Entertainment', 'Healthcare', 'Shopping', 'Education', 'Other'] %}
+                        <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="expense-amount">Amount (ZMW)</label>
+                    <input type="number" class="form-control" id="expense-amount" 
+                           placeholder="Enter amount" step="0.01" min="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label for="expense-date">Date</label>
+                    <input type="date" class="form-control" id="expense-date">
+                </div>
+                
+                <div class="form-group">
+                    <label for="expense-description">Description</label>
+                    <input type="text" class="form-control" id="expense-description" 
+                           placeholder="Enter description">
+                </div>
+            </div>
+            
+            <button type="button" class="btn btn-primary" id="add-expense-btn">
+                <i class="fas fa-plus"></i> Add Expense
+            </button>
+        </form>
+        
+        <div class="expenses-section">
+            <h3>Recent Expenses</h3>
+            <div id="expense-list" class="expense-list">
+                <div class="empty-state">
+                    <p>No expenses recorded yet. Add your first expense above.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+/* Clean, modern styling */
+.forms-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.date-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.summary-card {
+    margin-bottom: 30px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.summary-item {
+    text-align: center;
+    padding: 20px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.summary-item h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #999;
+}
+
+.summary-item .amount {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.summary-item.income .amount { color: #2ecc71; }
+.summary-item.expense .amount { color: #e74c3c; }
+.summary-item.remaining .amount { color: #3498db; }
+
+.budgets-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.budget-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.budget-item:last-child {
+    border-bottom: none;
+}
+
+.budget-info .budget-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.budget-info .budget-date {
+    color: #999;
+    font-size: 14px;
+}
+
+.budget-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.budget-amount {
+    font-weight: bold;
+    color: #2ecc71;
+}
+
+.goals-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.goal-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.goal-title {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.goal-target {
+    font-weight: bold;
+    color: #3498db;
+}
+
+.goal-details {
+    margin-bottom: 15px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.detail-item:last-child {
+    margin-bottom: 0;
+}
+
+.progress-container {
+    height: 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.goal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-text {
+    color: #999;
+    font-size: 14px;
+}
+
+.delete-form {
+    display: inline;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+    border-color: #c0392b;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.section-description {
+    color: #999;
+    margin-bottom: 25px;
+}
+
+.expenses-section {
+    margin-top: 30px;
+}
+
+.expenses-section h3 {
+    margin-bottom: 15px;
+}
+
+.expense-list {
+    min-height: 100px;
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+}
+
+.empty-state p {
+    margin: 0;
+}
+
+.tabs {
+    display: flex;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab {
+    padding: 15px 25px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab.active {
+    border-bottom-color: #3498db;
+    color: #3498db;
+}
+
+.tab:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tab-content.hidden {
+    display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .forms-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .date-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .budget-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .budget-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set current month and year as default
+    const currentDate = new Date();
+    const currentMonth = currentDate.toLocaleString('default', { month: 'long' });
+    const currentYear = currentDate.getFullYear();
+    
+    // Set default values for all month/year dropdowns
+    ['budget_month', 'cat_month'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = currentMonth;
+    });
+    
+    ['budget_year', 'cat_year'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = currentYear;
+    });
+    
+    // Set default date for expense form
+    const expenseDate = document.getElementById('expense-date');
+    if (expenseDate) {
+        expenseDate.value = currentDate.toISOString().split('T')[0];
+    }
+    
+    // Expense tracking functionality
+    const expenseBtn = document.getElementById('add-expense-btn');
+    if (expenseBtn) {
+        expenseBtn.addEventListener('click', function() {
+            const category = document.getElementById('expense-category').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const date = document.getElementById('expense-date').value;
+            const description = document.getElementById('expense-description').value;
+            
+            // Validate inputs
+            if (!category || isNaN(amount) || amount <= 0 || !date) {
+                alert('Please fill in all required fields with valid values.');
+                return;
+            }
+            
+            // Show success message
+            alert(`Expense added: ${category} - ZMW ${amount.toFixed(2)} on ${date}`);
+            
+            // Clear form
+            document.getElementById('expense-amount').value = '';
+            document.getElementById('expense-date').value = currentDate.toISOString().split('T')[0];
+            document.getElementById('expense-description').value = '';
+        });
+    }
+    
+    // Tab switching functionality
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.getAttribute('data-tab');
+            
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Show active tab content
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+                content.classList.remove('active');
+            });
+            
+            const activeContent = document.getElementById(`${tabId}-tab`);
+            if (activeContent) {
+                activeContent.classList.remove('hidden');
+                activeContent.classList.add('active');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -3,6 +3,8 @@ from functools import wraps
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from datetime import datetime
+import time
 
 # Import your existing backend services
 from user.db import init_db
@@ -13,6 +15,18 @@ from user.services.AuthenticationSer import AuthenticationService
 # Import account services
 from account.account_service import AccountService
 from account.exceptions import AccountNotFoundError, InsufficientFundsError, InactiveAccountError
+
+# Add these imports at the top
+from purchases.purchase_service import PurchaseService
+from purchases.budget_planner import BudgetPlanner
+from purchases.savings import SavingsGoals
+
+#import from loan service
+from loan.loan_service import LoanService
+from loan.models import LoanStatus
+
+# import penny chatbot
+from chatbot.penny_chatbot import PennyChatbot
 
 # Import database connection helper
 from database.db_helper import get_db_connection, close_db_connection
@@ -195,23 +209,51 @@ def dashboard():
                          accounts=user_accounts,
                          total_balance=total_balance)
 
+def debug_route(route_name):
+    """Decorator to debug slow routes"""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            print(f"🔍 [{datetime.now()}] Starting {route_name}")
+            
+            try:
+                result = func(*args, **kwargs)
+                end_time = time.time()
+                print(f"✅ [{datetime.now()}] {route_name} completed in {end_time - start_time:.2f}s")
+                return result
+            except Exception as e:
+                end_time = time.time()
+                print(f"❌ [{datetime.now()}] {route_name} failed after {end_time - start_time:.2f}s: {e}")
+                raise
+                
+        wrapper.__name__ = func.__name__
+        return wrapper
+    return decorator
 
 @app.route('/accounts')
 @login_required
 def accounts():
     user_id = session.get('user_id')
+    print(f"🔍 Starting accounts page for user {user_id}")
     
     try:
-        # Get user's accounts
+        print("🔍 Step 1: Calling get_accounts_by_user...")
+        start_time = time.time()
         user_accounts = account_service.get_accounts_by_user(user_id)
+        print(f"✅ Step 1 completed in {time.time() - start_time:.2f}s - Found {len(user_accounts)} accounts")
         
-        # Calculate total balance
+        print("🔍 Step 2: Calculating total balance...")
+        start_time = time.time()
         total_balance = sum(account['balance'] for account in user_accounts)
+        print(f"✅ Step 2 completed in {time.time() - start_time:.2f}s - Total: {total_balance}")
         
-        # Get recent transactions (from all accounts)
+        print("🔍 Step 3: Getting transaction history...")
+        start_time = time.time()
         recent_transactions = []
         for account in user_accounts:
+            print(f"🔍 Getting transactions for account {account['account_id']}")
             transactions = account_service.get_transaction_history(account['account_id'])
+            print(f"✅ Found {len(transactions)} transactions for account {account['account_id']}")
             for transaction in transactions:
                 recent_transactions.append({
                     'account_id': account['account_id'],
@@ -220,17 +262,24 @@ def accounts():
                     'amount': transaction[1],
                     'timestamp': transaction[2]
                 })
+        print(f"✅ Step 3 completed in {time.time() - start_time:.2f}s - Total transactions: {len(recent_transactions)}")
         
-        # Sort transactions by timestamp (newest first) and take top 5
+        print("🔍 Step 4: Sorting transactions...")
+        start_time = time.time()
         recent_transactions.sort(key=lambda x: x['timestamp'], reverse=True)
         recent_transactions = recent_transactions[:5]
+        print(f"✅ Step 4 completed in {time.time() - start_time:.2f}s")
         
     except Exception as e:
-        print(f"Error fetching accounts: {e}")
+        print(f"❌ Error in accounts route: {e}")
+        import traceback
+        traceback.print_exc()
         user_accounts = []
         total_balance = 0
         recent_transactions = []
+        flash('Error loading accounts. Please try again.')
     
+    print("🔍 Rendering template...")
     return render_template('accounts.html', 
                          current_user={'username': session.get('full_name', session.get('username', 'User'))},
                          accounts=user_accounts,
@@ -243,17 +292,28 @@ def create_account():
     user_id = session.get('user_id')
     account_type = request.form.get('account_type')
     
+    print(f"🔍 Starting account creation: user={user_id}, type={account_type}")
+    
     if not account_type or account_type not in ['Savings', 'Checking']:
+        print("❌ Invalid account type")
         flash('Please select a valid account type.')
         return redirect(url_for('accounts'))
     
     try:
+        print("🔍 Calling account_service.create_account...")
+        start_time = time.time()
         account = account_service.create_account(user_id, account_type)
+        print(f"✅ Account created in {time.time() - start_time:.2f}s: {account}")
         flash(f'{account_type} account created successfully!')
     except Exception as e:
+        print(f"❌ Error creating account: {e}")
+        import traceback
+        traceback.print_exc()
         flash(f'Error creating account: {str(e)}')
     
+    print("🔍 Redirecting to accounts page...")
     return redirect(url_for('accounts'))
+
 
 @app.route('/accounts/deposit', methods=['POST'])
 @login_required
@@ -343,21 +403,385 @@ def get_transactions(account_id):
 @app.route('/loans')
 @login_required
 def loans():
+    user_id = session.get('user_id')
+    loan_service = LoanService()
+    
+    try:
+        # Get user's loans
+        user_loans = loan_service.get_loans_by_user(user_id)
+        print(f"Found {len(user_loans)} loans for user {user_id}")
+        
+        # Calculate totals
+        total_borrowed = sum(loan.principal for loan in user_loans if loan.status != LoanStatus.REJECTED.value)
+        total_owed = sum(loan.balance_remaining for loan in user_loans if loan.status == LoanStatus.APPROVED.value)
+        total_repaid = sum(loan.total_repayment for loan in user_loans)
+        
+    except Exception as e:
+        print(f"Error fetching loans: {e}")
+        user_loans = []
+        total_borrowed = 0
+        total_owed = 0
+        total_repaid = 0
+        flash('Error loading loans. Please try again.')
+    
     return render_template('loans.html', 
-                         current_user={'username': session.get('full_name', session.get('username', 'User'))})
+                         current_user={'username': session.get('full_name', session.get('username', 'User'))},
+                         loans=user_loans,
+                         total_borrowed=total_borrowed,
+                         total_owed=total_owed,
+                         total_repaid=total_repaid,
+                         LoanStatus=LoanStatus)
 
+@app.route('/loans/apply', methods=['POST'])
+@login_required
+def apply_for_loan():
+    user_id = session.get('user_id')
+    
+    try:
+        principal = float(request.form.get('principal', 0))
+        interest_rate = float(request.form.get('interest_rate', 0))
+        term_months = int(request.form.get('term_months', 0))
+        loan_type = request.form.get('loan_type', '')
+        reason = request.form.get('reason', '')
+        
+        print(f"Loan application received: user_id={user_id}, principal={principal}, "
+              f"interest_rate={interest_rate}, term_months={term_months}, "
+              f"loan_type={loan_type}, reason={reason}")
+        
+        if principal <= 0 or interest_rate <= 0 or term_months <= 0:
+            flash('Please enter valid loan details.')
+            return redirect(url_for('loans'))
+        
+        if not loan_type:
+            flash('Please select a loan type.')
+            return redirect(url_for('loans'))
+        
+        loan_service = LoanService()
+        loan = loan_service.apply_for_loan(user_id, principal, interest_rate, term_months, loan_type, reason)
+        
+        print(f"Loan application successful: loan_id={loan.id}")
+        flash(f'Loan application submitted successfully! Your monthly payment will be ZMW {loan.monthly_payment:.2f}')
+        
+    except Exception as e:
+        print(f"Error applying for loan: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f'Error applying for loan: {str(e)}')
+    
+    return redirect(url_for('loans'))
+
+@app.route('/loans/repay', methods=['POST'])
+@login_required
+def make_repayment():
+    user_id = session.get('user_id')
+    
+    try:
+        loan_id = int(request.form.get('loan_id', 0))
+        amount = float(request.form.get('amount', 0))
+        
+        if amount <= 0:
+            flash('Please enter a valid repayment amount.')
+            return redirect(url_for('loans'))
+        
+        loan_service = LoanService()
+        
+        # Verify the loan belongs to the user and is approved
+        loan = loan_service.find_loan(loan_id)
+        if not loan or loan.user_id != user_id:
+            flash('Invalid loan or unauthorized action.')
+            return redirect(url_for('loans'))
+        
+        if loan.status != 'approved':
+            flash('You can only make repayments on approved loans.')
+            return redirect(url_for('loans'))
+        
+        if amount > loan.balance_remaining:
+            flash(f'Repayment amount cannot exceed the remaining balance of ZMW {loan.balance_remaining:.2f}')
+            return redirect(url_for('loans'))
+        
+        # Make the repayment
+        success = loan_service.make_repayment(loan_id, amount)
+        
+        if success:
+            flash(f'Repayment of ZMW {amount:.2f} processed successfully!')
+            
+            # Check if loan is fully paid
+            updated_loan = loan_service.find_loan(loan_id)
+            if updated_loan and updated_loan.balance_remaining <= 0:
+                flash('Congratulations! You have fully paid off this loan. 🎉')
+                
+        else:
+            flash('Error processing repayment. Please try again.')
+            
+    except ValueError:
+        flash('Please enter valid numeric values.')
+    except Exception as e:
+        flash(f'Error making repayment: {str(e)}')
+    
+    return redirect(url_for('loans'))
+
+@app.route('/loans/calculator', methods=['POST'])
+@login_required
+def calculate_loan():
+    try:
+        # Get data from JSON or form data
+        if request.is_json:
+            data = request.get_json()
+            principal = float(data.get('calc_principal', 0))
+            interest_rate = float(data.get('calc_interest_rate', 0))
+            term_months = int(data.get('calc_term_months', 0))
+        else:
+            principal = float(request.form.get('calc_principal', 0))
+            interest_rate = float(request.form.get('calc_interest_rate', 0))
+            term_months = int(request.form.get('calc_term_months', 0))
+        
+        # Validate inputs
+        if principal <= 0 or interest_rate <= 0 or term_months <= 0:
+            return jsonify({'error': 'Please enter valid values'}), 400
+        
+        # Calculate monthly payment
+        monthly_rate = interest_rate / 100 / 12
+        if monthly_rate == 0:
+            monthly_payment = principal / term_months
+        else:
+            monthly_payment = principal * monthly_rate * (1 + monthly_rate) ** term_months / ((1 + monthly_rate) ** term_months - 1)
+        
+        total_payment = monthly_payment * term_months
+        total_interest = total_payment - principal
+        
+        return jsonify({
+            'monthly_payment': round(monthly_payment, 2),
+            'total_payment': round(total_payment, 2),
+            'total_interest': round(total_interest, 2)
+        })
+        
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid input values'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+        
 @app.route('/plans')
 @login_required
 def plans():
+    user_id = session.get('user_id')
+    print(f"🔍 Starting plans page for user {user_id}")
+    
+    try:
+        print("🔍 Getting current date...")
+        current_month = datetime.now().strftime("%B")
+        current_year = datetime.now().year
+        print(f"✅ Current date: {current_month} {current_year}")
+        
+        print("🔍 Initializing BudgetPlanner...")
+        start_time = time.time()
+        budget_planner = BudgetPlanner()
+        print(f"✅ BudgetPlanner initialized in {time.time() - start_time:.2f}s")
+        
+        print("🔍 Initializing SavingsGoals...")
+        start_time = time.time()
+        savings = SavingsGoals(user_id)
+        print(f"✅ SavingsGoals initialized in {time.time() - start_time:.2f}s")
+        
+        print("🔍 Getting budgets...")
+        start_time = time.time()
+        budgets = budget_planner.get_budgets(user_id, current_month, current_year)
+        print(f"✅ Budgets retrieved in {time.time() - start_time:.2f}s: {len(budgets)} items")
+        
+        print("🔍 Getting budget summary...")
+        start_time = time.time()
+        budget_summary = budget_planner.get_budget_summary(user_id, current_month, current_year)
+        print(f"✅ Budget summary retrieved in {time.time() - start_time:.2f}s")
+        
+        print("🔍 Getting savings goals...")
+        start_time = time.time()
+        savings_goals = savings.get_goals()
+        print(f"✅ Savings goals retrieved in {time.time() - start_time:.2f}s: {len(savings_goals)} goals")
+        
+    except Exception as e:
+        print(f"❌ Error in plans route: {e}")
+        import traceback
+        traceback.print_exc()
+        budgets = []
+        budget_summary = None
+        savings_goals = []
+        flash('Error loading plans. Please try again.')
+    
+    print("🔍 Rendering plans template...")
     return render_template('plans.html', 
-                         current_user={'username': session.get('full_name', session.get('username', 'User'))})
+                         current_user={'username': session.get('full_name', session.get('username', 'User'))},
+                         budgets=budgets,
+                         budget_summary=budget_summary,
+                         savings_goals=savings_goals,
+                         current_month=current_month,
+                         current_year=current_year)
+
+@app.route('/plans/set_budget', methods=['POST'])
+@login_required
+def set_budget():
+    user_id = session.get('user_id')
+    budget_type = request.form.get('budget_type')
+    amount = float(request.form.get('amount', 0))
+    category = request.form.get('category', '')
+    month = request.form.get('month', datetime.now().strftime("%B"))
+    year = int(request.form.get('year', datetime.now().year))
+    
+    try:
+        purchase_service = PurchaseService(user_id)
+        
+        if budget_type == 'overall':
+            purchase_service.set_overall_budget(amount, month, year)
+            flash(f'Overall budget of ZMW {amount:.2f} set for {month} {year}')
+        else:
+            purchase_service.set_budget_category(category, amount, month, year)
+            flash(f'Budget for {category} set to ZMW {amount:.2f} for {month} {year}')
+            
+    except Exception as e:
+        flash(f'Error setting budget: {str(e)}')
+    
+    return redirect(url_for('plans'))
+
+@app.route('/plans/delete_budget', methods=['POST'])
+@login_required
+def delete_budget():
+    user_id = session.get('user_id')
+    category = request.form.get('category')
+    month = request.form.get('month', datetime.now().strftime("%B"))
+    year = int(request.form.get('year', datetime.now().year))
+    
+    try:
+        purchase_service = PurchaseService(user_id)
+        purchase_service.delete_budget_category(category, month, year)
+        flash(f'Budget category "{category}" deleted for {month} {year}')
+    except Exception as e:
+        flash(f'Error deleting budget: {str(e)}')
+    
+    return redirect(url_for('plans'))
+
+@app.route('/plans/add_savings_goal', methods=['POST'])
+@login_required
+def add_savings_goal():
+    user_id = session.get('user_id')
+    goal_name = request.form.get('goal_name')
+    target_amount = float(request.form.get('target_amount', 0))
+    
+    try:
+        purchase_service = PurchaseService(user_id)
+        purchase_service.add_savings_goal(goal_name, target_amount)
+        flash(f'Savings goal "{goal_name}" added with target of ZMW {target_amount:.2f}')
+    except Exception as e:
+        flash(f'Error adding savings goal: {str(e)}')
+    
+    return redirect(url_for('plans'))
+
+@app.route('/plans/update_savings', methods=['POST'])
+@login_required
+def update_savings():
+    user_id = session.get('user_id')
+    goal_name = request.form.get('goal_name')
+    amount = float(request.form.get('amount', 0))
+    
+    try:
+        purchase_service = PurchaseService(user_id)
+        purchase_service.update_savings_progress(goal_name, amount)
+        flash(f'Updated savings for "{goal_name}" by ZMW {amount:.2f}')
+    except Exception as e:
+        flash(f'Error updating savings: {str(e)}')
+    
+    return redirect(url_for('plans'))
+
+@app.route('/plans/delete_savings_goal', methods=['POST'])
+@login_required
+def delete_savings_goal():
+    user_id = session.get('user_id')
+    goal_name = request.form.get('goal_name')
+    
+    try:
+        purchase_service = PurchaseService(user_id)
+        purchase_service.delete_savings_goal(goal_name)
+        flash(f'Savings goal "{goal_name}" deleted')
+    except Exception as e:
+        flash(f'Error deleting savings goal: {str(e)}')
+    
+    return redirect(url_for('plans'))
 
 @app.route('/penny')
 @login_required
 def penny():
+    user_id = session.get('user_id')
+    
+    # Get initial data for the chat interface
+    try:
+        account_service = AccountService()
+        user_accounts = account_service.get_accounts_by_user(user_id)
+        total_balance = sum(account['balance'] for account in user_accounts) if user_accounts else 0
+        
+        purchase_service = PurchaseService(user_id)
+        savings_goals = purchase_service.get_savings_goals()
+        
+    except Exception as e:
+        print(f"Error fetching data for Penny: {e}")
+        user_accounts = []
+        total_balance = 0
+        savings_goals = []
+    
     return render_template('penny.html', 
-                         current_user={'username': session.get('full_name', session.get('username', 'User'))})
+                         current_user={'username': session.get('full_name', session.get('username', 'User'))},
+                         accounts=user_accounts,
+                         total_balance=total_balance,
+                         savings_goals=savings_goals)
 
+
+@app.route('/penny/chat', methods=['POST'])
+@login_required
+def penny_chat():
+    user_id = session.get('user_id')
+    user_message = request.json.get('message', '').strip()
+
+    if not user_message:
+        return jsonify({'error': 'Empty message'}), 400
+
+    try:
+        penny_bot = PennyChatbot(user_id)
+        response = penny_bot.process_message(user_message)
+
+        return jsonify({'response': response, 'success': True})
+
+    except Exception as e:
+        print(f"Error in Penny chat: {e}")
+        return jsonify({
+            'response': "I'm sorry, I encountered an error. Please try again.",
+            'error': str(e)
+        }), 500
+
+# Add this route to your web_app.py for testing
+@app.route('/penny/test', methods=['POST'])
+@login_required
+def penny_test():
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        print(f"Test route called - User ID: {user_id}")
+        print(f"Request data: {data}")
+        
+        return jsonify({
+            'success': True,
+            'response': f'Test successful! User ID: {user_id}, Message: {data.get("message", "No message")}',
+            'debug_info': {
+                'user_id': user_id,
+                'session_data': dict(session),
+                'request_data': data
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error in test route: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'response': 'Test failed'
+        }), 500
+    
 if __name__ == '__main__':
     print("Starting Flask application...")
     app.run(debug=True)
