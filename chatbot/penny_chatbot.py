@@ -166,14 +166,30 @@ class PennyChatbot:
             
             response_parts = ["Your savings goals:"]
             for goal in goals:
-                goal_name, target_amount, saved_amount = goal
+                # Access dictionary keys instead of unpacking as tuple
+                goal_name = goal['goal_name']
+                target_amount = float(goal['target_amount'])  # Convert to float
+                saved_amount = float(goal['saved_amount'])    # Convert to float
+                
                 progress = (saved_amount / target_amount * 100) if target_amount > 0 else 0
-                response_parts.append(f"• {goal_name}: ZMW {saved_amount:.2f}/ZMW {target_amount:.2f} ({progress:.1f}%)")
+                remaining = target_amount - saved_amount
+                
+                if remaining <= 0:
+                    status = "✅ Complete!"
+                else:
+                    status = f"ZMW {remaining:.2f} remaining"
+                
+                response_parts.append(
+                    f"• {goal_name}: ZMW {saved_amount:.2f}/ZMW {target_amount:.2f} "
+                    f"({progress:.1f}%) - {status}"
+                )
             
             return "<br>".join(response_parts)
             
         except Exception as e:
             print(f"Error in _get_savings_goals_response: {e}")
+            import traceback
+            traceback.print_exc()
             return "I couldn't retrieve your savings goals. Please try again later."
 
     def _get_loans_response(self):
