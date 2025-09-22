@@ -741,7 +741,8 @@ def penny_chat():
         return jsonify({'error': 'Empty message'}), 400
 
     try:
-        penny_bot = PennyChatbot(user_id)
+        # IMPORTANT: Pass the session to maintain state between requests
+        penny_bot = PennyChatbot(user_id, session=session)
         response = penny_bot.process_message(user_message)
 
         return jsonify({'response': response, 'success': True})
@@ -752,7 +753,7 @@ def penny_chat():
             'response': "I'm sorry, I encountered an error. Please try again.",
             'error': str(e)
         }), 500
-
+    
 # Add this route to your web_app.py for testing
 @app.route('/penny/test', methods=['POST'])
 @login_required
