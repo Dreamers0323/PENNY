@@ -74,11 +74,12 @@ class PennyChatbot:
                 "what did I spend", "payment history", "my transactions", 
                 "show my spending", "transaction details", "recent payments"
             ],
-            "purchase_planning": [
+           "purchase_planning": [
                 "can I buy", "should I purchase", "can I afford", "buying advice",
                 "purchase planning", "afford to buy", "help me buy", "planning to buy",
                 "want to purchase", "thinking of buying", "can I get", "is it affordable",
-                "will I be able to buy", "financial planning for purchase"
+                "will I be able to buy", "financial planning for purchase",
+                "what of a", "how about a", "what about", "can I get a", "i want a"
             ],
             "multiple_purchase_planning": [
                 "both", "and", "also", "as well", "together", "combined",
@@ -138,8 +139,10 @@ class PennyChatbot:
             [{"TEXT": {"REGEX": r"^\d+,\d+$"}}, {"LOWER": {"IN": ["kwacha", "zmw", "k"]}}],
             [{"LOWER": {"IN": ["zmw", "k"]}}, {"TEXT": {"REGEX": r"^\d+$"}}],
             [{"TEXT": {"REGEX": r"^\d+\.\d+$"}}],  # Decimal numbers
-        ]
-        
+            # Add patterns for numbers without currency symbols but in money context
+            [{"TEXT": {"REGEX": r"^\d+$"}, "OP": "?"}, {"LOWER": {"IN": ["costs", "cost", "price", "worth", "salary", "earn"]}}, {"TEXT": {"REGEX": r"^\d+$"}}],
+        ]   
+
         # Purchase intention patterns
         purchase_patterns = [
             [{"LEMMA": {"IN": ["buy", "purchase", "get", "afford"]}},
@@ -157,15 +160,21 @@ class PennyChatbot:
             # Clean and preprocess input
             cleaned_input = user_input.lower().strip()
             
-            # Check for multiple purchase indicators
-            if any(word in cleaned_input for word in ["both", "and", "together", "combined", "as well"]) and \
-               any(word in cleaned_input for word in ["car", "house", "buy", "purchase", "cost", "long"]):
-                return "multiple_purchase_planning", 0.8
-            
             # Check for family update indicators
             if any(phrase in cleaned_input for phrase in ["i have a family", "we are", "family of", "family and"]):
                 return "family_update", 0.8
             
+            # Check for multiple purchase indicators - more specific condition
+            # Only trigger if there are clear indicators of multiple items (like "both", "two", etc.)
+            if (any(word in cleaned_input for word in ["both", "two", "multiple", "several"]) or
+                (any(word in cleaned_input for word in ["and", "also", "as well"]) and 
+                len(re.findall(r'\b(car|house|phone|laptop|tv|furniture)\b', cleaned_input)) >= 2)):
+                return "multiple_purchase_planning", 0.8
+            
+            # After checking for family update and multiple purchase indicators
+            if any(phrase in cleaned_input for phrase in ["the item", "that item", "the thing", "the purchase", "it costs", "the one that costs"]):
+                return "purchase_planning", 0.8
+
             # Vectorize the input
             input_vector = self.vectorizer.transform([cleaned_input])
             
@@ -186,7 +195,7 @@ class PennyChatbot:
         except Exception as e:
             print(f"Error in intent classification: {e}")
             return None, 0.0
-
+        
     def extract_entities(self, user_input):
         """Enhanced entity extraction"""
         doc = self.nlp(user_input)
@@ -250,6 +259,12 @@ class PennyChatbot:
             except:
                 pass
         
+        # Enhanced item extraction - look for common items in the text
+        common_items = ["car", "house", "phone", "laptop", "computer", "tv", "television", "furniture", "bicycle", "bike"]
+        for item in common_items:
+            if item in text_lower:
+                entities["items"].append(item)
+
         return entities
 
     def _clean_money(self, money_text):
@@ -261,6 +276,20 @@ class PennyChatbot:
             return float(cleaned)
         except:
             return 0.0
+
+    def _clean_item_name(self, raw_item):
+        """Remove vague or placeholder item references"""
+        if not raw_item:
+            return "item"
+        
+        text = raw_item.lower().strip()
+        vague_refs = ["the item", "that item", "the thing", "the purchase", "the one", "it"]
+        
+        # If the input matches a vague reference, keep it generic
+        if any(ref in text for ref in vague_refs):
+            return "item"
+        
+        return raw_item.strip()
 
     def analyze_purchase_feasibility(self, item, cost, salary, family_size=1):
         """Smart purchase analysis"""
@@ -571,20 +600,22 @@ class PennyChatbot:
             # Look for contextual clues
             text_lower = user_input.lower()
             
-            # Better regex patterns for extracting salary and cost
+            # Enhanced regex patterns for extracting salary and cost
             salary_patterns = [
                 r'salary.*?(\d+(?:,\d+)*)',
                 r'earn.*?(\d+(?:,\d+)*)',
                 r'make.*?(\d+(?:,\d+)*)',
                 r'income.*?(\d+(?:,\d+)*)',
                 r'with.*?(\d+(?:,\d+)*)',  # "with a salary of X"
+                r'my.*?salary.*?is.*?(\d+(?:,\d+)*)',  # "my salary is X"
             ]
-            
+
             cost_patterns = [
                 r'costs?.*?(\d+(?:,\d+)*)',
                 r'price.*?(\d+(?:,\d+)*)',
                 r'worth.*?(\d+(?:,\d+)*)',
                 r'(\d+(?:,\d+)*).*?(?:car|house|phone|laptop|item)',  # "15000 car"
+                r'buy.*?(\d+(?:,\d+)*)',  # "buy a car for 15000"
             ]
             
             # Try to find salary first
@@ -622,18 +653,27 @@ class PennyChatbot:
                     cost = amounts[0]
                     salary = amounts[1]
                 else:
-                    # Default: first number is cost, second is salary
-                    cost = amounts[0]
-                    salary = amounts[1]
+                    # Default: larger number is likely the cost, smaller is salary
+                    cost = max(amounts)
+                    salary = min(amounts)
                     
                 print(f"Using heuristics - Cost: {cost}, Salary: {salary}")
-            
-            # Try to identify the item
+
+            # Extract item
             item = "item"
             if items:
-                item = items[0]
+                candidate = items[0].lower()
+                # Ignore vague references
+                vague_refs = ["the item", "that item", "the thing", "the purchase", "the one", "it"]
+                if any(ref in candidate for ref in vague_refs):
+                    if self.conversation_context.get("last_calculation"):
+                        item = self.conversation_context["last_calculation"]["item"]
+                else:
+                    item = items[0]
+            elif self.conversation_context.get("last_calculation"):
+                item = self.conversation_context["last_calculation"]["item"]
             else:
-                # Look for common items in text
+                # fallback to common item search
                 common_items = ["car", "house", "phone", "laptop", "computer", "tv", "television", "furniture", "bicycle", "bike"]
                 for potential_item in common_items:
                     if potential_item in text_lower:
@@ -648,6 +688,13 @@ class PennyChatbot:
             if cost and item:
                 self.conversation_context["purchases"][item] = {"cost": cost}
             
+            # Try to fill missing values from previous context
+            if not salary and self.conversation_context.get("last_calculation"):
+                salary = self.conversation_context["last_calculation"]["salary"]
+
+            if not cost and self.conversation_context.get("last_calculation"):
+                cost = self.conversation_context["last_calculation"]["cost"]
+
             # If we have both cost and salary, provide immediate analysis
             if cost and salary and cost > 0 and salary > 0:
                 print("Providing immediate analysis")
@@ -659,7 +706,7 @@ class PennyChatbot:
                 
                 # Store this calculation for potential updates
                 self.conversation_context["last_calculation"] = {
-                    "item": item,
+                    "item": self._clean_item_name(item),
                     "cost": cost,
                     "salary": salary,
                     "family_size": family_size,
@@ -700,8 +747,7 @@ class PennyChatbot:
             # Fallback to guided flow
             self.state = "purchase_item"
             self.context = {}
-            self._save_state()
-            return "I'd be happy to help you plan a purchase! What would you like to buy?"
+            self._save
 
     def _format_purchase_analysis(self, item, cost, salary, analysis):
         """Format the purchase analysis response"""
@@ -776,32 +822,12 @@ class PennyChatbot:
             if "cost" not in self.context or "salary" not in self.context:
                 text_lower = user_input.lower()
                 
-                # Check if user is reminding us of previously mentioned numbers
-                if ("remember" in text_lower or "told you" in text_lower or 
-                    "said" in text_lower) and len(numbers) >= 2:
-                    # User is repeating the information - extract it properly
-                    amounts = sorted(numbers)
-                    
-                    # Use context to determine which is which
-                    if "salary" in text_lower:
-                        # Find salary number
-                        salary_match = re.search(r'salary.*?(\d+(?:,\d+)*)', text_lower)
-                        if salary_match:
-                            self.context["salary"] = float(salary_match.group(1).replace(',', ''))
-                        else:
-                            self.context["salary"] = amounts[0]  # Assume first/smaller number
-                            
-                        # Other number is cost
-                        for num in numbers:
-                            if num != self.context["salary"]:
-                                self.context["cost"] = num
-                                break
-                    else:
-                        # Default assumption: larger number is cost
-                        self.context["cost"] = amounts[-1]  # Largest number
-                        self.context["salary"] = amounts[0]   # Smallest number
-                        
-                elif len(numbers) >= 2:
+                # Check if user is providing both cost and salary in response
+                entities = self.extract_entities(user_input)
+                numbers = entities["numbers"] + entities["money_amounts"]
+                numbers = [n for n in numbers if n > 0]  # Remove zeros
+                
+                if len(numbers) >= 2:
                     # Two numbers provided - determine which is which
                     amounts = sorted(numbers)
                     
@@ -819,9 +845,10 @@ class PennyChatbot:
                             # Assume order: "salary is X and car is Y"
                             self.context["salary"] = amounts[0]
                             self.context["cost"] = amounts[1]
-                    elif "cost" in text_lower or "car" in text_lower:
+                    elif "cost" in text_lower or self.context.get("item", "").lower() in text_lower:
                         # Find number mentioned near "cost" or item
-                        cost_match = re.search(r'(?:cost|car).*?(\d+(?:,\d+)*)', text_lower)
+                        item_name = self.context.get("item", "").lower()
+                        cost_match = re.search(r'(?:cost|' + re.escape(item_name) + r').*?(\d+(?:,\d+)*)', text_lower)
                         if cost_match:
                             self.context["cost"] = float(cost_match.group(1).replace(',', ''))
                             # Other number is salary
@@ -839,31 +866,35 @@ class PennyChatbot:
                         self.context["cost"] = amounts[1]
                     
                     print(f"Extracted - Salary: {self.context.get('salary')}, Cost: {self.context.get('cost')}")
+                    self._save_state()  # Save state after updating context
                     return "Do you have family members you support? (yes/no)"
-                    
                 elif len(numbers) == 1:
                     if "cost" not in self.context:
                         self.context["cost"] = numbers[0]
+                        self._save_state()  # Save state after updating context
                         return f"Great! The {self.context['item']} costs ZMW {numbers[0]:,.0f}. Now, what's your monthly salary?"
                     else:
                         self.context["salary"] = numbers[0]
+                        self._save_state()  # Save state after updating context
                         return "Do you have family members you support? (yes/no)"
                 else:
                     return "I need both the cost and your salary to help you. Please tell me both amounts in ZMW. For example: 'The car costs 15000 and my salary is 8000'"
-
+    
             # Step 3: Family information
             if "has_family" not in self.context:
                 text_lower = user_input.lower()
                 if any(word in text_lower for word in ["yes", "yeah", "yep", "i do", "i have"]):
                     self.context["has_family"] = True
+                    self._save_state()  # Add this line
                     return "How many people do you support in total (including yourself)?"
                 elif any(word in text_lower for word in ["no", "nope", "none", "don't", "dont"]):
                     self.context["has_family"] = False
                     self.context["family_size"] = 1
+                    self._save_state()  # Add this line
                     return self._calculate_final_plan()
                 else:
                     return "Please answer yes or no - do you support any family members?"
-
+                
             # Step 4: Get family size
             if self.context.get("has_family") and "family_size" not in self.context:
                 try:
@@ -871,10 +902,11 @@ class PennyChatbot:
                     if family_size < 1:
                         return "Please enter a valid number (1 or more)."
                     self.context["family_size"] = family_size
+                    self._save_state()  # Save state after updating context
                     return self._calculate_final_plan()
                 except (ValueError, IndexError):
                     return "Please enter the number of people you support (e.g., 3)."
-
+    
             return self._calculate_final_plan()
             
         except Exception as e:
@@ -901,7 +933,7 @@ class PennyChatbot:
             
             # Store this calculation for potential updates
             self.conversation_context["last_calculation"] = {
-                "item": item,
+                "item": self._clean_item_name(item),
                 "cost": cost,
                 "salary": salary,
                 "family_size": family_size,
